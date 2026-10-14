@@ -68,7 +68,7 @@ dialog{width:min(620px,calc(100vw - 32px));padding:22px;background:var(--panel);
 dialog::backdrop{background:rgba(15,25,30,.45)}
 dialog h2{margin:0 0 8px}
 dialog textarea{display:block;width:100%;height:320px;resize:vertical;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:12px;margin:14px 0;font:13px/1.5 monospace}
-#export-status{min-height:1.5em;font-size:12px;color:var(--mute);margin-bottom:0}
+#export-status,#import-status{min-height:1.5em;font-size:12px;color:var(--mute);margin-bottom:0}
 #save-status{min-height:1.5em;margin:8px 0 0;font-size:12px;color:var(--mute)}
 .pattern-preview{display:inline-block;width:22px;height:22px;flex:none;border:1px solid var(--line);border-radius:4px;background-color:var(--s1)}
 .pattern-chip{display:flex;align-items:center;gap:7px}
@@ -114,7 +114,7 @@ dialog textarea{display:block;width:100%;height:320px;resize:vertical;background
 <div class="g"><span>Innenprofil</span><div class="row" id="c-profile"></div><small class="range-hint">Comfort Fit: innen leicht gerundet für bequemes Tragen.</small></div>
 <div class="g" id="dome-options"><span>Wölbung: <b id="dv"></b></span><input type="range" id="dm" min="0" max="200" step="5" aria-label="Wölbung des Rings in Prozent"><small class="range-hint">0–100 % klassisch · 100–200 % stark gerundet</small></div>
 <div class="g"><label class="engraving-label" for="engraving">Innengravur <span id="engraving-count">0 / 30</span></label><input type="text" id="engraving" maxlength="30" placeholder="z. B. Anna & Max · 14.10.2026" autocomplete="off"><small class="range-hint">Bis zu 30 Zeichen · In der Ansicht „Innen“ sichtbar.</small></div>
-<div class="actions"><span class="engraving-label">Deinen Entwurf behalten oder teilen</span><div class="row" style="margin-top:8px"><button class="chip" id="save">Speichern</button><button class="chip" id="load" disabled>Gespeicherten Entwurf laden</button><button class="chip" id="export-text">Für Juwelier exportieren</button><button class="chip" id="export-json">JSON exportieren</button></div><small class="range-hint">Speichern behält einen Entwurf in diesem Browser.</small><p id="save-status" role="status" aria-live="polite"></p></div>
+<div class="actions"><span class="engraving-label">Deinen Entwurf behalten oder teilen</span><div class="row" style="margin-top:8px"><button class="chip" id="save">Speichern</button><button class="chip" id="load" disabled>Gespeicherten Entwurf laden</button><button class="chip" id="export-text">Für Juwelier exportieren</button><button class="chip" id="export-json">JSON exportieren</button><button class="chip" id="import-json">JSON-Datei laden</button><button class="chip" id="import-json-text">JSON einfügen</button><input type="file" id="import-json-file" accept=".json,application/json" hidden></div><small class="range-hint">Speichern behält einen Entwurf in diesem Browser. JSON-Entwürfe kannst du als Datei laden oder aus der Zwischenablage einfügen.</small><p id="save-status" role="status" aria-live="polite"></p></div>
 </div>
 </section>
 <section>
@@ -125,6 +125,7 @@ dialog textarea{display:block;width:100%;height:320px;resize:vertical;background
 </section>
 </main>
 <dialog id="export-dialog" aria-labelledby="export-title"><h2 id="export-title">Ringentwurf exportieren</h2><p class="range-hint">Als Datei herunterladen oder den Text kopieren und teilen.</p><textarea id="export-content" readonly aria-label="Exportierter Ringentwurf"></textarea><div class="row"><button class="chip" id="copy-export">Text kopieren</button><button class="chip" id="download-export">Datei herunterladen</button><button class="chip" id="close-export">Schließen</button></div><p id="export-status" role="status"></p></dialog>
+<dialog id="import-dialog" aria-labelledby="import-title"><h2 id="import-title">JSON-Entwurf einfügen</h2><p class="range-hint">Kopierten JSON-Entwurf hier mit Strg+V oder ⌘V einfügen und laden.</p><textarea id="import-content" aria-label="JSON-Entwurf zum Importieren" placeholder="JSON hier einfügen" spellcheck="false"></textarea><div class="row"><button class="chip" id="import-json-submit">Entwurf laden</button><button class="chip" id="close-import">Abbrechen</button></div><p id="import-status" role="status" aria-live="polite"></p></dialog>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
 <script>
@@ -207,6 +208,11 @@ function normalizeConfig(raw){
   return cfg;
 }
 function configurationSnapshot(){return {version:1,configuration:{...st,sc:[...st.sc]}}}
+function parseConfigurationJSON(text){
+  const saved=JSON.parse(text),raw=saved?.configuration;
+  if(!saved||saved.version!==1||!raw||typeof raw!=='object'||Array.isArray(raw)||!Object.keys(DEFAULT_CONFIG).some(key=>Object.prototype.hasOwnProperty.call(raw,key)))throw new Error('Invalid ring configuration');
+  return normalizeConfig(raw);
+}
 
 const holder=$('#ring');
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
@@ -807,6 +813,26 @@ $('#load').onclick=()=>{
     if(!saved||saved.version!==1||!saved.configuration)throw new Error('Invalid saved configuration');
     st=normalizeConfig(saved.configuration);sel=2;render();$('#save-status').textContent='Gespeicherter Entwurf geladen.';
   }catch{$('#save-status').textContent='Der gespeicherte Entwurf konnte nicht geladen werden.'}
+};
+$('#import-json').onclick=()=>$('#import-json-file').click();
+$('#import-json-file').onchange=async e=>{
+  const file=e.target.files[0];if(!file)return;
+  try{
+    const configuration=parseConfigurationJSON(await file.text());
+    st=configuration;sel=2;render();$('#save-status').textContent='JSON-Entwurf geladen.';
+  }catch{$('#save-status').textContent='Die Datei konnte nicht geladen werden. Bitte eine mit „JSON exportieren“ gespeicherte Ringentwurf-Datei auswählen.'}
+  finally{e.target.value=''}
+};
+$('#import-json-text').onclick=()=>{
+  $('#import-status').textContent='';$('#import-dialog').showModal();$('#import-content').focus();
+};
+$('#close-import').onclick=()=>$('#import-dialog').close();
+$('#import-json-submit').onclick=()=>{
+  try{
+    const configuration=parseConfigurationJSON($('#import-content').value);
+    st=configuration;sel=2;render();$('#save-status').textContent='JSON-Entwurf geladen.';
+    $('#import-dialog').close();$('#import-content').value='';$('#import-status').textContent='';
+  }catch{$('#import-status').textContent='Der JSON-Text konnte nicht geladen werden. Bitte den vollständigen Entwurf aus „JSON exportieren“ einfügen.'}
 };
 let exportKind='text';
 function openExport(kind){

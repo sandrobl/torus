@@ -90,6 +90,24 @@ test('invalid saved values are clamped or replaced with safe defaults',()=>{
   assert.equal(result.sc.length,4);
   assert.equal(result.engraving.length,30);
 });
+test('JSON import restores exported choices and normalizes unsafe values',()=>{
+  const run=configModel();
+  const cfg=run(`parseConfigurationJSON(JSON.stringify({version:1,configuration:{mat:'gold',size:62,engraving:'Anna & Max',sc:['blue','red','black','green'],thickness:-5}}))`);
+  assert.equal(cfg.size,62);
+  assert.equal(cfg.engraving,'Anna & Max');
+  assert.equal(JSON.stringify(cfg.sc),'["blue","red","black","green"]');
+  assert.equal(cfg.thickness,1);
+  run("st.size=62;st.engraving='Imported design'");
+  assert.equal(run('parseConfigurationJSON(JSON.stringify(configurationSnapshot())).engraving'),'Imported design');
+});
+test('JSON import rejects malformed or unrelated files without changing the design',()=>{
+  const run=configModel();
+  const before=run('JSON.stringify(st)');
+  for(const input of ['{','null','[]','{}','{"version":2,"configuration":{"size":62}}','{"version":1,"configuration":[]}','{"version":1,"configuration":{}}','{"version":1,"configuration":{"unrelated":true}}']){
+    assert.throws(()=>run(`parseConfigurationJSON(${JSON.stringify(input)})`),error=>error.name==='SyntaxError'||error.message==='Invalid ring configuration');
+    assert.equal(run('JSON.stringify(st)'),before);
+  }
+});
 test('main and side stones use independent sizes and remain separated',()=>{
   for(const emb of ['flush','karree','kanal']) {
     const m=model({emb,mainStoneSize:1.5,sideStoneSize:2.5,side:2});
