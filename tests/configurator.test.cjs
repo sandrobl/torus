@@ -3,9 +3,9 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const { test } = require('node:test');
 const html = fs.readFileSync(require('node:path').join(__dirname, '../index.html'), 'utf8');
-const modelCode = html.slice(html.indexOf('function innerRadius()'), html.indexOf('function stoneLevel('));
+const modelCode = html.slice(html.indexOf('function innerRadius()'), html.indexOf('function holeFor('));
 function model(overrides = {}) {
-  const st = {size:54,profile:'comfort',stones:true,pattern:'none',patternDepth:.15,patternSpacing:2,thickness:1.9,w:6,dome:40,emb:'flush',side:1,sc:['blue','red','black','green'],stone:'white',...overrides};
+  const st = {size:54,profile:'comfort',stones:true,pattern:'none',patternDepth:.15,patternSpacing:2,thickness:1.9,w:6,dome:40,fh:.8,emb:'flush',side:1,sc:['blue','red','black','green'],stone:'white',...overrides};
   const ctx = vm.createContext({ st, THREE:{MathUtils:{clamp:(x,a,b)=>Math.max(a,Math.min(b,x)),smoothstep:(x,a,b)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t)}}}});
   vm.runInContext(modelCode, ctx);
   return {st, run: code => vm.runInContext(code,ctx)};
@@ -132,6 +132,20 @@ test('embedded stones cannot protrude into the finger opening',()=>{
       const offset={flush:.13,groove:.11,grat:.18,kanal:.13,pave:.10}[emb];
       const tip=m.run('outerPeak()')+offset-.59*item.d;
       assert.ok(tip>=m.run('innerRadius()')+.08-1e-10,`${emb}: stone tip must clear bore`);
+    }
+  }
+});
+
+test('large channel and pave stones have separated angular footprints at their actual seated height',()=>{
+  for(const emb of ['kanal','pave']) {
+    const m=model({emb,size:48,thickness:1,w:10,dome:200,bandProfile:'rounded',side:2,mainStoneSize:5,sideStoneSize:3});
+    const items=m.run('settingPlan()').sort((a,b)=>a.th-b.th);
+    const peak=m.run('outerPeak()');
+    // Lower girdle: crown is 0.16d above the seat, girdle extends 0.012d below it.
+    const halfAngle=item=>Math.atan2(item.d/2,peak+(emb==='pave'?.10:.13)-.172*item.d);
+    for(let i=1;i<items.length;i++){
+      const gap=items[i].th-items[i-1].th-halfAngle(items[i])-halfAngle(items[i-1]);
+      assert.ok(gap>0,`${emb}: adjacent stone envelopes overlap by ${-gap} radians`);
     }
   }
 });

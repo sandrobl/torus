@@ -1,0 +1,97 @@
+Ring configurator calculation audit — 2026-10-14
+
+RESULT
+The numerical checks pass after correcting stone spacing. This validates the
+implemented design model, not the suitability of a ring for manufacture.
+
+FIXED
+Stone spacing used arc lengths on the outer band radius, ignoring the lower
+radius of embedded stone girdles. EU 48, width 10 mm, nominal thickness 1 mm,
+200% dome, a 5 mm main stone and 3 mm sides in a channel produced an actual
+stone-section intersection of approximately 0.01354 mm.
+Spacing now accounts for each stone's angular footprint at its seated height.
+The channel endpoint uses the same footprint. Pavé receives the same correction.
+The reproduced intersecting pair now has approximately 0.13635 mm separation
+along a separating axis. This is a geometry result, not a setting tolerance.
+
+CHECKED CALCULATIONS
+1. Ring sizing: inner radius = EU circumference / (2*pi); diameter = size/pi.
+   EU 54 = 17.18873385 mm, displayed as 17.19 mm. Comfort fit opens towards the
+   edges by up to 0.12 mm in radius; the centre retains the selected bore size.
+2. Band: base radius = inner radius + nominal thickness. Outer profiles and
+   additional dome change the local thickness. Dome above 100% adds up to
+   min(2.1 mm, 0.28*width) at the centre. At width 6 mm, 200% dome adds 1.68 mm.
+   The percentage is a design control, not a percentage increase in thickness.
+3. Patterns: non-negative radial recesses, edge fading, and seam continuity
+   checked for every pattern. Circumferential repetition is rounded to an
+   integer, so spacing is nominal. Diagonal spacing is measured in the model's
+   axial/circumferential coordinates, not perpendicular to the groove.
+   Recesses are capped when the model's 0.12 mm wall floor would be exceeded.
+4. Stone sizes: width allowance is 0.8 mm total; size is also capped by seat
+   depth, then rounded DOWN to 0.1 mm. Main maximum 5 mm; side maximum 3 mm.
+   Round size denotes diameter; square size denotes side length.
+5. Positions: symmetric left/right placement, separate main and side sizes,
+   0/2/4 side stones, fixed 15-stone Pavé arrangement, and colour assignments
+   agree with the configuration and exports. No-stone mode has no stone cuts.
+6. Stone depth: preview crown = 0.16*size, pavilion = 0.43*size. Size limits
+   preserve a nominal 0.08 mm clearance at the tip above the central bore.
+7. Carats: round = size^2 * (0.62*size) * 0.0061 * density/3.52;
+   square/Princess = size^2 * (0.70*size) * 0.0083 * density/3.52.
+   Factors match published diamond weight approximations. Density scaling
+   accounts for actual approximate mass rather than diamond-equivalent mass.
+   Representative densities: diamond 3.52, moissanite 3.22, corundum 4.00,
+   spinel 3.60, beryl 2.72, tsavorite 3.61.
+   5 mm round diamond: 0.47275 ct -> 0.47 ct.
+   5 mm square diamond: 0.72625 ct -> 0.73 ct.
+   5 mm round sapphire: 0.5372159 ct -> 0.54 ct.
+   3 mm round diamond: 0.102114 ct -> 0.10 ct.
+   Values increase cubically with size and remain positive for small stones.
+   Side ranges use the selected active stone types; values are per stone.
+8. Stored values: supported numeric ranges, step rounding, invalid values,
+   configuration round trips, and exported dimensions/stone counts checked.
+9. Rendering math: inspected cylindrical placement, mesh scaling, facet planes,
+   profile normals, camera scaling, and optical shader calculations. Materials,
+   refraction, colour dispersion, surface textures, and engraving are visual
+   approximations; there is no metal mass, price, or engraving-depth estimator.
+
+LIMITS THAT REMAIN
+- Carats use assumed depths and representative densities, not measured stones.
+  The preview cut has a different simplified depth (59%); the estimate is
+  intentionally independent of mesh volume. Real cut proportions, inclusions,
+  girdles, and species-specific cuts can change weight substantially.
+- The 0.12 mm wall floor and 0.08 mm tip clearance are geometric safeguards,
+  not validated manufacturing minima for any of the offered materials.
+- Setting construction is illustrative. In particular, a channel uses rails
+  sized to its widest stone: substantially smaller side stones do not receive
+  a separately narrowed channel. The preview does not verify secure retention,
+  seat fit, prong strength, casting tolerances, or all setting-metal collisions.
+- Profile dimensions, square setting height, and pattern depths describe the
+  parametric model; no manufacturing CAD or physical sample was validated.
+
+VERIFICATION
+node --test: 22 passing tests, including:
+- 5,832 boundary combinations across nine settings, three sizes, three band
+  thicknesses, three widths, three domes, four outer and two inner profiles.
+  Checks finite dimensions, stone counts, width limits, tip clearance,
+  separated angular footprints, no wraparound, and sampled minimum wall.
+- All 15 stone types, both cut assumptions, sizes 0.5 through 5.0 mm.
+- Export counts, colours and diameter for all nine settings and side counts.
+An additional temporary Three.js r147 mesh audit sampled actual gemstone
+vertices in 2,916 configurations. Minimum observed bore clearance 0.082997 mm;
+all adjacent angular envelopes separated after the fix. This is sampled
+coverage, not an exhaustive proof for every continuous geometric surface.
+The regression case was additionally checked using convex cross-section
+intersection. Browser smoke test showed the corrected configuration and carat
+labels with no captured console warnings/errors. git diff --check passed.
+
+REFERENCES
+Corvin Laboratory, CIC, page 13 (diamond weight factors):
+https://corvinlab.com/files/CIC.pdf
+GIA, diamond/moissanite specific gravities:
+https://www.gia.edu/gems-gemology/fall-2020-labnotes-synthetic-moissanite-fraudulent-gia-inscription
+GIA gemstone references:
+https://www.gia.edu/sapphire?lang=en
+https://www.gia.edu/spinel
+https://www.gia.edu/gia-website/aquamarine
+https://www.gia.edu/emerald
+https://www.gia.edu/doc/garnet-grossular-tsavorite-34358.pdf

@@ -93,14 +93,14 @@ dialog textarea{display:block;width:100%;height:320px;resize:vertical;background
 <div class="g"><span>Muster</span><div class="row" id="c-pattern"></div>
 <div id="pattern-options" hidden>
 <label for="pattern-depth">Mustertiefe: <b id="pattern-depth-value"></b></label><input type="range" id="pattern-depth" min="0.05" max="0.3" step="0.05" aria-label="Mustertiefe in Millimetern">
-<label for="pattern-spacing">Musterabstand: <b id="pattern-spacing-value"></b></label><input type="range" id="pattern-spacing" min="1" max="5" step="0.5" aria-label="Musterabstand in Millimetern">
+<label for="pattern-spacing">Musterabstand (ca.): <b id="pattern-spacing-value"></b></label><input type="range" id="pattern-spacing" min="1" max="5" step="0.5" aria-label="Musterabstand in Millimetern">
 <small class="range-hint">Muster und Oberfläche lassen sich kombinieren.</small></div></div>
 <div class="g"><label class="toggle"><input type="checkbox" role="switch" id="stones-enabled" checked aria-controls="stone-options"><span class="toggle-track" aria-hidden="true"></span>Mit Steinen</label><small class="range-hint">Aus: ein schlichtes Ringband. Deine Steinwahl bleibt erhalten.</small></div>
 <fieldset id="stone-options"><legend class="sr-only">Steine konfigurieren</legend>
 <div class="g"><span>Stein-Einbettung</span><div class="row" id="c-emb"></div></div>
 <div class="g" id="main-size-options"><span class="size-heading"><span>Hauptsteingröße: <b id="main-stone-value"></b></span><span class="carat-estimate" id="main-stone-carats" aria-live="polite"></span></span><input type="range" id="main-stone-size" min="1" max="5" step="0.1" aria-label="Hauptsteingröße in Millimetern"><small class="range-hint">Durchmesser · Bei Karree: Kantenlänge · An Ringbreite und Fassungstiefe angepasst</small></div>
 <div class="g" id="side-size-options"><span class="size-heading"><span><span id="side-size-label">Seitensteingröße</span>: <b id="side-stone-value"></b></span><span class="carat-estimate" id="side-stone-carats" aria-live="polite"></span></span><input type="range" id="side-stone-size" min="0.5" max="3" step="0.1" aria-label="Seitensteingröße in Millimetern"></div>
-<small class="range-hint">Karat: grobe Schätzung aus Größe, Steinart und typischem Schliff. Das tatsächliche Gewicht hängt von Tiefe und Proportionen ab.</small>
+<small class="range-hint">Karat: grobe Schätzung pro Stein. Angenommene Tiefe: Rundschliff 62 %, Karree/Princess 70 % der Größe. Das tatsächliche Gewicht hängt von Tiefe und Proportionen ab.</small>
 <div class="g" id="side-options"><span>Seitensteine (links und rechts)</span><div class="row" id="c-side"></div></div>
 <div class="g"><span>Steine einzeln gestalten: Stein antippen, dann Steinart wählen</span><div class="row" id="slots"></div></div>
 <div class="g"><span>Steinart und Farbe des gewählten Steins</span><div class="row" id="c-stone"></div><p class="stone-detail" id="stone-detail" aria-live="polite"></p><a class="stone-source" href="https://4cs.gia.edu/en-us/blog/colored-gemstone-engagement-rings-buying-guide/" target="_blank" rel="noopener noreferrer">Alltagstauglichkeit von Schmucksteinen · GIA</a></div>
@@ -108,7 +108,7 @@ dialog textarea{display:block;width:100%;height:320px;resize:vertical;background
 </fieldset>
 <div class="g"><span>Kontraststreifen (Zweitmaterial)</span><div class="row" id="c-stripe"></div></div>
 <div class="g"><span>Breite: <b id="wv"></b></span><input type="range" id="w" min="4" max="10" step="0.5" aria-label="Ringbreite in Millimetern"></div>
-<div class="g"><span>Ringstärke: <b id="tv"></b></span><input type="range" id="thickness" min="1" max="4" step="0.1" aria-label="Ringstärke in Millimetern"><small class="range-hint">Dicke des Ringbands von innen nach außen · Wölbung kommt hinzu</small></div>
+<div class="g"><span>Ringstärke: <b id="tv"></b></span><input type="range" id="thickness" min="1" max="4" step="0.1" aria-label="Ringstärke in Millimetern"><small class="range-hint">Nennstärke in der Bandmitte · Profil, Muster und Nut verändern die lokale Dicke; zusätzliche Wölbung kommt hinzu</small></div>
 <div class="g"><span>Ringgröße: <b id="size-value"></b></span><input type="range" id="size" min="48" max="76" step="1" aria-label="Ringgröße, Innenumfang in Millimetern"><small class="range-hint" id="diameter-value"></small></div>
 <div class="g"><span>Ringprofil außen</span><div class="row" id="c-band-profile"></div><small class="range-hint">Querschnitt des Ringbands · Innenprofil separat wählbar</small></div>
 <div class="g"><span>Innenprofil</span><div class="row" id="c-profile"></div><small class="range-hint">Comfort Fit: innen leicht gerundet für bequemes Tragen.</small></div>
@@ -157,7 +157,8 @@ const ST={
 const GEM_DENSITY={white:3.52,black:3.52,champ:3.52,moissanite:3.22,sapphire_white:4,blue:4,sapphire_pink:4,sapphire_yellow:4,sapphire_green:4,red:4,spinel_red:3.60,spinel_black:3.60,aquamarine:2.72,tsavorite:3.61,green:2.72};
 function estimateCarats(size,stone,square=false){
   // Typical round depth 62% and square depth 70%; estimates are independent of the preview mesh.
-  // Round diamond approximation: diameter² × depth × 0.0061 (JTR diamond expert manual).
+  // Diamond factors: diameter² × depth × 0.0061; square length × width × depth × 0.0083.
+  // Corvin Laboratory, CIC p. 13: https://corvinlab.com/files/CIC.pdf
   // Square approximation uses 0.0083; actual cut proportions can vary considerably.
   const depth=size*(square?.70:.62),factor=square?.0083:.0061;
   return size*size*depth*factor*GEM_DENSITY[stone]/3.52;
@@ -523,22 +524,29 @@ function ringProfile(y,angle=0){
   outer-=Math.min(patternDepthAt(y,angle),Math.max(0,outer-inner-.12));
   return {inner,outer};
 }
+function stoneHalfAngle(item){
+  // Use the lower girdle at the actual seat radius, not the band surface radius.
+  return Math.atan2(item.d/2,stoneLevel(item)-.012*item.d);
+}
 function settingPlan(){
   if(!st.stones){channelEnd=0;return []}
   const sizes=stoneSizes(),d=sizes.main,radius=outerPeak(),items=[],colors=[st.sc[0],st.sc[1],st.stone,st.sc[2],st.sc[3]];
   if(st.emb==='pave'){
-    const dia=sizes.side,spacing=(dia+.10)/radius,n=7;
+    const dia=sizes.side,spacing=Math.max((dia+.10)/radius,2*stoneHalfAngle({d:dia,em:'pave'})+.10/radius),n=7;
     for(let i=-n;i<=n;i++)items.push({d:dia,th:i*spacing,sk:st.stone,em:'pave',slot:2});
   }else{
     const channel=st.emb==='kanal',n=+st.side,dd=sizes.side;
     items.push({d,th:0,sk:st.stone,em:st.emb,slot:2});
     for(let i=1;i<=n;i++){
-      const gap=channel?.09:.36,arc=d/2+dd/2+gap+(i-1)*(dd+(channel?.09:.30));
-      items.push({d:dd,th:arc/radius,sk:colors[i===1?3:4],em:st.emb,slot:i===1?3:4});
-      items.push({d:dd,th:-arc/radius,sk:colors[i===1?1:0],em:st.emb,slot:i===1?1:0});
+      const gap=channel?.09:.36,sideGap=channel?.09:.30;
+      const mainHalf=stoneHalfAngle({d,em:st.emb}),sideHalf=stoneHalfAngle({d:dd,em:st.emb});
+      const first=Math.max((d/2+dd/2+gap)/radius,mainHalf+sideHalf+gap/radius);
+      const step=Math.max((dd+sideGap)/radius,2*sideHalf+sideGap/radius),angle=first+(i-1)*step;
+      items.push({d:dd,th:angle,sk:colors[i===1?3:4],em:st.emb,slot:i===1?3:4});
+      items.push({d:dd,th:-angle,sk:colors[i===1?1:0],em:st.emb,slot:i===1?1:0});
     }
   }
-  channelEnd=st.emb==='kanal'?Math.max(...items.map(i=>Math.abs(i.th)+i.d/2/radius))+.16:0;
+  channelEnd=st.emb==='kanal'?Math.max(...items.map(i=>Math.abs(i.th)+Math.max(i.d/2/radius,stoneHalfAngle(i))))+.16:0;
   return items;
 }
 function stoneLevel(item){
@@ -774,13 +782,13 @@ function downloadFile(name,content,type){
 function exportDescription(){
   const lines=['Ringentwurf','',`Material: ${M[st.mat][0]}`,`Oberfläche: ${SURF[st.surf]}`,
     `Muster: ${PATTERN[st.pattern]}`];
-  if(st.pattern!=='none')lines.push(`Mustertiefe: ${st.patternDepth} mm`, `Musterabstand: ${st.patternSpacing} mm`);
+  if(st.pattern!=='none')lines.push(`Mustertiefe: ${st.patternDepth} mm`, `Musterabstand (ca.): ${st.patternSpacing} mm`);
   lines.push(`Ringgröße (EU / Innenumfang): ${st.size} mm`,`Innendurchmesser: ${(2*innerRadius()).toFixed(2)} mm`,
-    `Breite: ${st.w} mm`,`Ringstärke: ${st.thickness} mm (ohne zusätzliche Wölbung)`,`Wölbung: ${st.bandProfile==='flat'||st.bandProfile==='bevel'?'Entfällt':st.dome+' %'}`,
+    `Breite: ${st.w} mm`,`Ringstärke (Nennmaß in der Bandmitte): ${st.thickness} mm (vor Muster/Nut, ohne zusätzliche Wölbung)`,`Wölbung: ${st.bandProfile==='flat'||st.bandProfile==='bevel'?'Entfällt':st.dome+' %'}`,
     `Ringprofil außen: ${BAND_PROFILE[st.bandProfile]}`,`Innenprofil: ${PROFILE[st.profile]}`,`Kontraststreifen: ${st.stripe==='none'?'Keiner':M[st.stripe][0]}`,
     `Innengravur: ${st.engraving.trim()||'Keine'}`,`Steine: ${st.stones?'Ja':'Keine'}`);
   if(st.stones){
-    lines.push(`Fassung: ${EMB[st.emb]}`);
+    lines.push(`Fassung: ${EMB[st.emb]}`, 'Karat: Schätzung pro Stein; angenommene Tiefe 62 % bei Rundschliff, 70 % bei Karree/Princess.');
     if(st.emb==='karree')lines.push(`Fassungshöhe: ${st.fh} mm`);
     for(const [i,item] of settingPlan().sort((a,b)=>a.th-b.th).entries()){
       lines.push(`Stein ${i+1} (${item.slot===2&&st.emb!=='pave'?'Hauptstein':item.th<0?'links':item.th>0?'rechts':'Mitte'}): ${ST[item.sk][0]}, ${item.d.toFixed(2)} mm, ca. ${formatCarats(estimateCarats(item.d,item.sk,item.em==='karree'))}`);
