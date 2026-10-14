@@ -108,6 +108,131 @@ test('JSON import rejects malformed or unrelated files without changing the desi
     assert.equal(run('JSON.stringify(st)'),before);
   }
 });
+test('women and engagement configurations retain slim bands and engagement settings in JSON',()=>{
+  const run=configModel();
+  const cfg=run("normalizeConfig({ringType:'engagement',w:2,size:46,emb:'krappen',mainStoneSize:6.5,cut:'oval',prongs:6,fh:3})");
+  assert.equal(cfg.ringType,'engagement');assert.equal(cfg.w,2);assert.equal(cfg.size,46);
+  assert.equal(cfg.mainStoneSize,6.5);assert.equal(cfg.cut,'oval');assert.equal(cfg.prongs,6);assert.equal(cfg.fh,3);
+  run('st='+JSON.stringify(cfg));
+  assert.equal(run('parseConfigurationJSON(JSON.stringify(configurationSnapshot())).cut'),'oval');
+  assert.equal(run("normalizeConfig({ringType:'women',w:2.5}).w"),2.5);
+});
+test('large engagement stones sit above slim bands while embedded stones stay inside the band width',()=>{
+  for(const emb of ['krappen','vollzarge','zarge','karree']){
+    const m=model({ringType:'engagement',w:2,mainStoneSize:6.5,fh:3,side:1,sideStoneSize:1});
+    m.st.emb=emb;
+    const items=m.run('settingPlan()');
+    assert.equal(items.find(i=>i.slot===2).d,6.5);
+    for(const item of items)assert.ok(m.run(`stoneLevel(${JSON.stringify(item)})`)-.43*item.d>=m.run('outerPeak()')+.08-1e-10);
+    m.st.emb='flush';
+    assert.ok(m.run('stoneSizes().main')<=1.2);
+  }
+});
+test('ring type starting designs preserve personal choices and fit women or engagement proportions',()=>{
+  const run=configModel();
+  run("st.size=49;st.mat='rosegold';st.engraving='Forever';selectRingType('engagement')");
+  assert.equal(run('st.w'),2.5);assert.equal(run('st.emb'),'krappen');assert.equal(run('st.mainStoneSize'),6);
+  assert.equal(run('st.size'),49);assert.equal(run('st.mat'),'rosegold');assert.equal(run('st.engraving'),'Forever');
+  run("selectRingType('women')");
+  assert.equal(run('st.w'),3);assert.equal(run('st.emb'),'flush');assert.equal(run('st.mainStoneSize'),1.5);
+});
+test('raised center cut changes independently of round side stones',()=>{
+  const m=model({ringType:'engagement',cut:'oval',emb:'krappen',side:1});
+  assert.equal(m.run("stoneShape({em:'krappen',slot:2})"),'oval');
+  assert.equal(m.run("stoneShape({em:'krappen',slot:1})"),'round');
+  m.st.cut='princess';
+  assert.equal(m.run("stoneShape({em:'krappen',slot:2})"),'princess');
+});
+test('small engagement side stones sit lower than the raised center and remain separated',()=>{
+  const m=model({ringType:'engagement',emb:'krappen',w:2.5,mainStoneSize:6,sideStoneSize:2,fh:3,side:2});
+  const items=m.run('settingPlan()').sort((a,b)=>a.th-b.th);
+  const center=items.find(i=>i.slot===2),side=items.find(i=>i.slot===1);
+  assert.ok(m.run(`stoneLevel(${JSON.stringify(side)})`)<m.run(`stoneLevel(${JSON.stringify(center)})`));
+  for(let i=1;i<items.length;i++)assert.ok(items[i].th-items[i-1].th>m.run(`stoneHalfAngle(${JSON.stringify(items[i])})+stoneHalfAngle(${JSON.stringify(items[i-1])})`));
+});
+test('tapered shoulders narrow at the head and retain full band width at the back',()=>{
+  const m=model({ringType:'engagement',emb:'krappen',shoulder:'tapered',shoulderWidth:60});
+  assert.equal(m.run('shoulderWidthFactor(0)'),.6);
+  assert.equal(m.run('shoulderWidthFactor(Math.PI)'),1);
+  assert.equal(m.run('shoulderWidthFactor(-.5)'),m.run('shoulderWidthFactor(.5)'));
+  m.st.shoulder='straight';assert.equal(m.run('shoulderWidthFactor(0)'),1);
+  m.st.shoulder='tapered';m.st.emb='flush';assert.equal(m.run('shoulderWidthFactor(0)'),1);
+});
+test('shoulder options survive JSON import and default safely for old designs',()=>{
+  const run=configModel();
+  const cfg=run("normalizeConfig({ringType:'engagement',shoulder:'cathedral',shoulderWidth:60})");
+  assert.equal(cfg.shoulder,'cathedral');assert.equal(cfg.shoulderWidth,60);
+  run('st='+JSON.stringify(cfg));
+  assert.equal(run('parseConfigurationJSON(JSON.stringify(configurationSnapshot())).shoulder'),'cathedral');
+  assert.equal(run('normalizeConfig({}).shoulder'),'straight');
+  assert.equal(run("normalizeConfig({shoulder:'unknown',shoulderWidth:-100}).shoulderWidth"),50);
+});
+test('cathedral shoulders rise continuously from the band and support side stones above the arches',()=>{
+  for(const side of [1,2]){
+    const m=model({ringType:'engagement',emb:'krappen',shoulder:'cathedral',w:2.5,mainStoneSize:6,sideStoneSize:2,fh:3,side});
+    const points=m.run('cathedralShoulderPoints(settingPlan(),1)'),base=m.run('outerBandRadius(0)');
+    assert.ok(Math.atan2(-points[0][2],points[0][0])>=1);
+    assert.ok(points.at(-1)[0]>base);
+    for(let i=1;i<points.length;i++)assert.ok(Math.hypot(points[i][0],points[i][2])>=Math.hypot(points[i-1][0],points[i-1][2])-1e-10);
+    for(const item of m.run('settingPlan()').filter(item=>item.slot!==2)){
+      const tip=m.run(`stoneLevel(${JSON.stringify(item)})`)-.43*item.d;
+      assert.ok(tip>=m.run(`cathedralShoulderRadius(${item.th})`)+.3-1e-10);
+    }
+  }
+});
+test('wide cathedral shoulders narrow to the gallery on a small center stone',()=>{
+  const m=model({ringType:'engagement',emb:'krappen',shoulder:'cathedral',w:2.5,cathedralWidth:2.5,mainStoneSize:2.2,sideStoneSize:2,fh:3,side:1});
+  assert.equal(m.run("cathedralShoulderSectionWidth({d:2.2},0)"),2.5);
+  assert.ok(m.run("cathedralShoulderSectionWidth({d:2.2},1)")<=.484+1e-10);
+  assert.ok(m.run("cathedralShoulderSectionWidth({d:2.2},.8)")<2.5);
+  const p=m.run('cathedralShoulderPoints(settingPlan(),1)'),base=m.run('outerBandRadius(0)');
+  assert.ok(Math.atan2(-p[0][2],p[0][0])>=1);
+  assert.ok(p.length>10);
+});
+test('cathedral width adjusts independently and stays within the ring band width',()=>{
+  const m=model({ringType:'engagement',emb:'krappen',shoulder:'cathedral',w:2.5,cathedralWidth:.6});
+  assert.equal(m.run('cathedralShoulderWidth()'),.6);
+  m.st.cathedralWidth=1.5;assert.equal(m.run('cathedralShoulderWidth()'),1.5);
+  m.st.cathedralWidth=3;assert.equal(m.run('cathedralShoulderWidth()'),2.5);
+  m.st.cathedralWidth=0;assert.equal(m.run('cathedralShoulderWidth()'),.4);
+  const run=configModel();
+  run("st=normalizeConfig({ringType:'engagement',shoulder:'cathedral',cathedralWidth:1.5})");
+  assert.equal(run('parseConfigurationJSON(JSON.stringify(configurationSnapshot())).cathedralWidth'),1.5);
+});
+test('prong mounts connect below the culet and place a gallery immediately below the girdle',()=>{
+  for(const d of [1,2,6,8]){
+    const m=model({ringType:'engagement',emb:'krappen',cut:'round',prongs:6});
+    const plan=m.run(`prongMountPlan({d:${d},em:'krappen',slot:2})`);
+    assert.equal(plan.count,6);
+    assert.ok(plan.lowerY<-.43*d);
+    assert.ok(plan.galleryY<0&&plan.galleryY>-.43*d);
+    assert.ok(plan.galleryRadius>d/2);
+    assert.ok(plan.prongRadius>=.055&&plan.prongRadius<=.18);
+    assert.equal(plan.prongs.length,6);
+    for(const points of plan.prongs){
+      assert.equal(points[0][1],plan.lowerY);
+      assert.equal(points[2][1],plan.galleryY);
+      assert.ok(points.at(-1)[1]>0);
+    }
+  }
+});
+test('princess mounts use four corner claws and a square gallery',()=>{
+  const m=model({ringType:'engagement',emb:'krappen',cut:'princess',prongs:6});
+  const plan=m.run("prongMountPlan({d:6,em:'krappen',slot:2})");
+  assert.equal(plan.count,4);assert.equal(plan.square,true);
+  assert.equal(plan.cornerCaps.length,4);
+  for(const cap of plan.cornerCaps){assert.equal(cap.length,3);assert.ok(cap.every(p=>p[1]>0))}
+});
+test('non-raised prong baskets clear the finger bore including the lower ribs',()=>{
+  for(const thickness of [1,1.9,4]){
+    const m=model({ringType:'men',emb:'krappen',thickness,w:6,mainStoneSize:5,side:2,sideStoneSize:3});
+    for(const item of m.run('settingPlan()')){
+      const plan=m.run(`prongMountPlan(${JSON.stringify(item)})`);
+      const bottom=m.run(`stoneLevel(${JSON.stringify(item)})`)+plan.lowerY-plan.prongRadius;
+      assert.ok(bottom>=m.run('innerRadius()')+.08-1e-10);
+    }
+  }
+});
 test('main and side stones use independent sizes and remain separated',()=>{
   for(const emb of ['flush','karree','kanal']) {
     const m=model({emb,mainStoneSize:1.5,sideStoneSize:2.5,side:2});
