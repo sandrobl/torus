@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Herren-Trauring Konfigurator</title>
+<title>Trauring Konfigurator</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;600;800&display=swap">
 <style>
 :root{--bg:#e4e7e9;--panel:#f6f7f8;--ink:#1b2126;--mute:#5d6870;--line:#cdd3d7;--acc:#24505a;--accink:#fff;--s1:#dde2e5;--s2:#a9b2b8;
@@ -24,6 +24,7 @@ header p{margin:0;color:var(--mute)}
 #sum{margin:4px 8px 0;text-align:center;font-weight:600}
 .ctl{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:16px}
 .g>span{display:block;font-size:13px;color:var(--mute);margin-bottom:6px;font-weight:600}
+.g>.size-heading{display:flex;align-items:baseline;justify-content:space-between;gap:6px;flex-wrap:wrap}.carat-estimate{font-size:12px;font-weight:600;color:var(--acc);white-space:nowrap}
 .row{display:flex;flex-wrap:wrap;gap:8px}
 button{font:inherit;color:var(--ink);cursor:pointer}
 .chip{padding:7px 12px;border:1px solid var(--line);background:transparent;border-radius:8px}
@@ -48,27 +49,72 @@ input[type=range]{width:100%;accent-color:var(--acc)}.range-hint{display:block;m
 .cell:hover{border-color:var(--acc)}
 .dot{flex:none;width:22px;height:22px;border-radius:50%}
 .pre{display:flex;flex-wrap:wrap;gap:8px}
+[hidden]{display:none!important}
+#stone-options{display:grid;gap:16px;border:0;padding:0;margin:0;min-width:0}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.toggle{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;cursor:pointer}
+.toggle input{position:absolute;opacity:0;width:44px;height:26px}
+.toggle-track{display:block;position:relative;width:44px;height:26px;border-radius:20px;background:var(--line);transition:background .15s}
+.toggle-track::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--panel);box-shadow:0 1px 3px #0003;transition:transform .15s}
+.toggle input:checked+.toggle-track{background:var(--acc)}
+.toggle input:checked+.toggle-track::after{transform:translateX(18px)}
+.toggle input:focus-visible+.toggle-track{outline:3px solid var(--acc);outline-offset:3px}
+#pattern-options{display:grid;gap:10px;margin-top:12px}
+#pattern-options label,.engraving-label{display:block;font-size:13px;color:var(--mute)}
+input[type=text]{width:100%;padding:10px 12px;margin-top:6px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--ink);font:inherit}
+.actions{border-top:1px solid var(--line);padding-top:16px}
+.actions button:disabled{opacity:.45;cursor:default}
+dialog{width:min(620px,calc(100vw - 32px));padding:22px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px}
+dialog::backdrop{background:rgba(15,25,30,.45)}
+dialog h2{margin:0 0 8px}
+dialog textarea{display:block;width:100%;height:320px;resize:vertical;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:12px;margin:14px 0;font:13px/1.5 monospace}
+#export-status{min-height:1.5em;font-size:12px;color:var(--mute);margin-bottom:0}
+#save-status{min-height:1.5em;margin:8px 0 0;font-size:12px;color:var(--mute)}
+.pattern-preview{display:inline-block;width:22px;height:22px;flex:none;border:1px solid var(--line);border-radius:4px;background-color:var(--s1)}
+.pattern-chip{display:flex;align-items:center;gap:7px}
+.pattern-preview.lines{background-image:repeating-linear-gradient(0deg,transparent 0 4px,var(--mute) 4px 5px)}
+.pattern-preview.diagonal{background-image:repeating-linear-gradient(45deg,transparent 0 5px,var(--mute) 5px 6px)}
+.pattern-preview.chevron{background-image:linear-gradient(135deg,transparent 45%,var(--mute) 46% 54%,transparent 55%),linear-gradient(225deg,transparent 45%,var(--mute) 46% 54%,transparent 55%);background-size:10px 10px}
+.pattern-preview.waves{background-image:radial-gradient(ellipse at 50% 100%,transparent 40%,var(--mute) 42% 48%,transparent 50%);background-size:12px 8px}
+.pattern-preview.facets{background-image:conic-gradient(from 45deg,var(--s1) 0 25%,var(--s2) 0 50%,var(--mute) 0 75%,var(--s1) 0);background-size:11px 11px}
 </style>
 </head>
 <body>
 <main>
 <header>
-<h1>Herren-Trauring Konfigurator</h1>
-<p>Material, Oberfläche, Steinfassung und Steinart frei kombinieren.</p>
+<h1>Trauring Konfigurator</h1>
+<p>Größe, Profil, Oberfläche, Muster und Steine frei kombinieren.</p>
 </header>
 <section class="wrap">
 <div class="stage"><div class="view-controls" aria-label="Ansicht der Vorschau"><button class="view" data-view="setting" aria-pressed="true">Fassung</button><button class="view" data-view="profile" aria-pressed="false">Profil</button><button class="view" data-view="inside" aria-pressed="false">Innen</button><button class="view" id="rotate" aria-pressed="false" aria-label="Automatische Rotation">↻ Rotation</button></div><div id="ring" role="img" aria-label="3D-Vorschau des Rings"></div><p id="sum"></p><p class="hint">Ziehen zum Drehen · Scrollen zum Zoomen · Stein zum Auswählen antippen</p></div>
 <div class="ctl">
 <div class="g"><span>Ringfarbe / Material</span><div class="row" id="c-mat"></div></div>
 <div class="g"><span>Oberfläche</span><div class="row" id="c-surf"></div></div>
+<div class="g"><span>Muster</span><div class="row" id="c-pattern"></div>
+<div id="pattern-options" hidden>
+<label for="pattern-depth">Mustertiefe: <b id="pattern-depth-value"></b></label><input type="range" id="pattern-depth" min="0.05" max="0.3" step="0.05" aria-label="Mustertiefe in Millimetern">
+<label for="pattern-spacing">Musterabstand: <b id="pattern-spacing-value"></b></label><input type="range" id="pattern-spacing" min="1" max="5" step="0.5" aria-label="Musterabstand in Millimetern">
+<small class="range-hint">Muster und Oberfläche lassen sich kombinieren.</small></div></div>
+<div class="g"><label class="toggle"><input type="checkbox" role="switch" id="stones-enabled" checked aria-controls="stone-options"><span class="toggle-track" aria-hidden="true"></span>Mit Steinen</label><small class="range-hint">Aus: ein schlichtes Ringband. Deine Steinwahl bleibt erhalten.</small></div>
+<fieldset id="stone-options"><legend class="sr-only">Steine konfigurieren</legend>
 <div class="g"><span>Stein-Einbettung</span><div class="row" id="c-emb"></div></div>
-<div class="g"><span>Seitensteine (links und rechts)</span><div class="row" id="c-side"></div></div>
+<div class="g" id="main-size-options"><span class="size-heading"><span>Hauptsteingröße: <b id="main-stone-value"></b></span><span class="carat-estimate" id="main-stone-carats" aria-live="polite"></span></span><input type="range" id="main-stone-size" min="1" max="5" step="0.1" aria-label="Hauptsteingröße in Millimetern"><small class="range-hint">Durchmesser · Bei Karree: Kantenlänge · An Ringbreite und Fassungstiefe angepasst</small></div>
+<div class="g" id="side-size-options"><span class="size-heading"><span><span id="side-size-label">Seitensteingröße</span>: <b id="side-stone-value"></b></span><span class="carat-estimate" id="side-stone-carats" aria-live="polite"></span></span><input type="range" id="side-stone-size" min="0.5" max="3" step="0.1" aria-label="Seitensteingröße in Millimetern"></div>
+<small class="range-hint">Karat: grobe Schätzung aus Größe, Steinart und typischem Schliff. Das tatsächliche Gewicht hängt von Tiefe und Proportionen ab.</small>
+<div class="g" id="side-options"><span>Seitensteine (links und rechts)</span><div class="row" id="c-side"></div></div>
 <div class="g"><span>Steine einzeln gestalten: Stein antippen, dann Steinart wählen</span><div class="row" id="slots"></div></div>
 <div class="g"><span>Steinart und Farbe des gewählten Steins</span><div class="row" id="c-stone"></div><p class="stone-detail" id="stone-detail" aria-live="polite"></p><a class="stone-source" href="https://4cs.gia.edu/en-us/blog/colored-gemstone-engagement-rings-buying-guide/" target="_blank" rel="noopener noreferrer">Alltagstauglichkeit von Schmucksteinen · GIA</a></div>
+<div class="g" id="gfh"><span>Fassungshöhe (Karree): <b id="fv"></b></span><input type="range" id="fh" min="0.4" max="1.6" step="0.1" aria-label="Fassungshöhe in Millimetern"></div>
+</fieldset>
 <div class="g"><span>Kontraststreifen (Zweitmaterial)</span><div class="row" id="c-stripe"></div></div>
 <div class="g"><span>Breite: <b id="wv"></b></span><input type="range" id="w" min="4" max="10" step="0.5" aria-label="Ringbreite in Millimetern"></div>
-<div class="g"><span>Wölbung: <b id="dv"></b></span><input type="range" id="dm" min="0" max="200" step="5" aria-label="Wölbung des Rings in Prozent"><small class="range-hint">0–100 % klassisch · 100–200 % stark gerundet</small></div>
-<div class="g" id="gfh"><span>Fassungshöhe (Karree): <b id="fv"></b></span><input type="range" id="fh" min="0.4" max="1.6" step="0.1" aria-label="Fassungshöhe in Millimetern"></div>
+<div class="g"><span>Ringstärke: <b id="tv"></b></span><input type="range" id="thickness" min="1" max="4" step="0.1" aria-label="Ringstärke in Millimetern"><small class="range-hint">Dicke des Ringbands von innen nach außen · Wölbung kommt hinzu</small></div>
+<div class="g"><span>Ringgröße: <b id="size-value"></b></span><input type="range" id="size" min="48" max="76" step="1" aria-label="Ringgröße, Innenumfang in Millimetern"><small class="range-hint" id="diameter-value"></small></div>
+<div class="g"><span>Ringprofil außen</span><div class="row" id="c-band-profile"></div><small class="range-hint">Querschnitt des Ringbands · Innenprofil separat wählbar</small></div>
+<div class="g"><span>Innenprofil</span><div class="row" id="c-profile"></div><small class="range-hint">Comfort Fit: innen leicht gerundet für bequemes Tragen.</small></div>
+<div class="g" id="dome-options"><span>Wölbung: <b id="dv"></b></span><input type="range" id="dm" min="0" max="200" step="5" aria-label="Wölbung des Rings in Prozent"><small class="range-hint">0–100 % klassisch · 100–200 % stark gerundet</small></div>
+<div class="g"><label class="engraving-label" for="engraving">Innengravur <span id="engraving-count">0 / 30</span></label><input type="text" id="engraving" maxlength="30" placeholder="z. B. Anna & Max · 14.10.2026" autocomplete="off"><small class="range-hint">Bis zu 30 Zeichen · In der Ansicht „Innen“ sichtbar.</small></div>
+<div class="actions"><span class="engraving-label">Deinen Entwurf behalten oder teilen</span><div class="row" style="margin-top:8px"><button class="chip" id="save">Speichern</button><button class="chip" id="load" disabled>Gespeicherten Entwurf laden</button><button class="chip" id="export-text">Für Juwelier exportieren</button><button class="chip" id="export-json">JSON exportieren</button></div><small class="range-hint">Speichern behält einen Entwurf in diesem Browser.</small><p id="save-status" role="status" aria-live="polite"></p></div>
 </div>
 </section>
 <section>
@@ -78,11 +124,15 @@ input[type=range]{width:100%;accent-color:var(--acc)}.range-hint{display:block;m
 <div class="pre" id="pre"></div>
 </section>
 </main>
+<dialog id="export-dialog" aria-labelledby="export-title"><h2 id="export-title">Ringentwurf exportieren</h2><p class="range-hint">Als Datei herunterladen oder den Text kopieren und teilen.</p><textarea id="export-content" readonly aria-label="Exportierter Ringentwurf"></textarea><div class="row"><button class="chip" id="copy-export">Text kopieren</button><button class="chip" id="download-export">Datei herunterladen</button><button class="chip" id="close-export">Schließen</button></div><p id="export-status" role="status"></p></dialog>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
 <script>
 const M={platin:['Platin','#f4f6f8','#c7ccd2','#868d96'],weissgold:['Weißgold','#fafaf8','#dcddde','#9a9da1'],gelbgold:['Gelbgold','#fdeaa8','#e1b64a','#9c7119'],rosegold:['Roségold','#fbdccf','#dca08b','#a2605a'],titan:['Titan','#9aa0a8','#6a7078','#3d4147'],tantal:['Tantal','#62666e','#3c3f45','#1f2125'],carbon:['Carbon','#3a3b40','#1a1b1e','#060607']};
-const SURF={polish:'Poliert',matt:'Matt',hammer:'Gehämmert',ice:'Eismatt',muster:'Muster'};
+const SURF={polish:'Poliert',matt:'Matt',hammer:'Gehämmert',ice:'Eismatt'};
+const PATTERN={none:'Kein Muster',lines:'Linien',diagonal:'Diagonal',chevron:'Chevron',waves:'Wellen',facets:'Facetten'};
+const BAND_PROFILE={flat:'Flach',rounded:'Gerundet',bevel:'Abgeschrägte Kanten',dshape:'D-Profil'};
+const PROFILE={flat:'Flach',comfort:'Comfort Fit'};
 const EMB={flush:'Bündig',groove:'Fuge / Nut',karree:'Karree-Fassung',zarge:'Teilzarge',vollzarge:'Vollzarge',krappen:'Krappenfassung',grat:'Gratfassung',kanal:'Kanalfassung',pave:'Pavé'};
 const ST={
   white:['Diamant weiß','#ffffff','#e3f2ff','#93bcd9'],
@@ -101,6 +151,23 @@ const ST={
   tsavorite:['Tsavorit grün','#94ed9e','#259548','#0b4d24'],
   green:['Smaragd grün','#8de0b4','#2f9e6a','#0f4f33']
 };
+// Approximate specific gravities: GIA gem encyclopedia and laboratory publications.
+// Diamond/moissanite: https://www.gia.edu/gems-gemology/fall-2020-labnotes-synthetic-moissanite-fraudulent-gia-inscription
+// Other species: https://www.gia.edu/gem-encyclopedia
+const GEM_DENSITY={white:3.52,black:3.52,champ:3.52,moissanite:3.22,sapphire_white:4,blue:4,sapphire_pink:4,sapphire_yellow:4,sapphire_green:4,red:4,spinel_red:3.60,spinel_black:3.60,aquamarine:2.72,tsavorite:3.61,green:2.72};
+function estimateCarats(size,stone,square=false){
+  // Typical round depth 62% and square depth 70%; estimates are independent of the preview mesh.
+  // Round diamond approximation: diameter² × depth × 0.0061 (JTR diamond expert manual).
+  // Square approximation uses 0.0083; actual cut proportions can vary considerably.
+  const depth=size*(square?.70:.62),factor=square?.0083:.0061;
+  return size*size*depth*factor*GEM_DENSITY[stone]/3.52;
+}
+function formatCarats(value){return value.toFixed(value<.001?4:value<.01?3:2).replace('.',',')+' ct'}
+function caratRange(size,stones,square=false){
+  const weights=stones.map(stone=>estimateCarats(size,stone,square));
+  const low=formatCarats(Math.min(...weights)),high=formatCarats(Math.max(...weights));
+  return 'ca. '+(low===high?low:low.replace(' ct','')+'–'+high)+' je Stein';
+}
 const STONE_INFO={
   white:['10','Klassischer Trauringstein mit hoher Kratzfestigkeit.'],
   black:['10','Dunkler, kräftiger Diamantakzent.'],
@@ -118,9 +185,27 @@ const STONE_INFO={
   tsavorite:['7–7,5','Brillantes Grün; für den Alltag eine geschützte Fassung wählen.'],
   green:['7,5–8','Stoßempfindlicher: geschützte Fassung und schonende Pflege empfohlen.']
 };
-let st={mat:'platin',surf:'polish',emb:'flush',stone:'white',w:6,stripe:'none',dome:40,side:0,sc:['white','white','white','white'],fh:.8};
+const DEFAULT_CONFIG={mat:'platin',surf:'polish',emb:'flush',stone:'white',w:6,thickness:1.9,stripe:'none',dome:40,side:0,sc:['white','white','white','white'],fh:.8,stones:true,pattern:'none',patternDepth:.15,patternSpacing:2,size:54,profile:'comfort',engraving:'',mainStoneSize:2.9,sideStoneSize:2,bandProfile:'rounded'};
+let st={...DEFAULT_CONFIG,sc:[...DEFAULT_CONFIG.sc]};
 const $=s=>document.querySelector(s);
 const sg=m=>`linear-gradient(135deg,${m[1]},${m[2]} 55%,${m[3]})`;
+
+function normalizeConfig(raw){
+  const cfg={...DEFAULT_CONFIG,sc:[...DEFAULT_CONFIG.sc]};
+  if(!raw||typeof raw!=='object')return cfg;
+  for(const [key,choices] of Object.entries({mat:M,surf:SURF,emb:EMB,stone:ST,stripe:{none:true,...M},pattern:PATTERN,profile:PROFILE,bandProfile:BAND_PROFILE})){
+    if(typeof raw[key]==='string'&&Object.prototype.hasOwnProperty.call(choices,raw[key]))cfg[key]=raw[key];
+  }
+  for(const [key,[lo,hi,step]] of Object.entries({w:[4,10,.5],thickness:[1,4,.1],dome:[0,200,5],fh:[.4,1.6,.1],side:[0,2,1],size:[48,76,1],patternDepth:[.05,.3,.05],patternSpacing:[1,5,.5],mainStoneSize:[1,5,.1],sideStoneSize:[.5,3,.1]})){
+    if(typeof raw[key]==='number'&&Number.isFinite(raw[key]))cfg[key]=Number((Math.round(Math.max(lo,Math.min(hi,raw[key]))/step)*step).toFixed(2));
+  }
+  if(typeof raw.stones==='boolean')cfg.stones=raw.stones;
+  if(Array.isArray(raw.sc))cfg.sc=cfg.sc.map((v,i)=>Object.prototype.hasOwnProperty.call(ST,raw.sc[i])?raw.sc[i]:v);
+  if(typeof raw.engraving==='string')cfg.engraving=raw.engraving.replace(/[\r\n\t]/g,' ').slice(0,30);
+  const limit=Math.floor(Math.min(5,cfg.w-.8)*10)/10;cfg.mainStoneSize=Math.min(cfg.mainStoneSize,limit);cfg.sideStoneSize=Math.min(cfg.sideStoneSize,limit);
+  return cfg;
+}
+function configurationSnapshot(){return {version:1,configuration:{...st,sc:[...st.sc]}}}
 
 const holder=$('#ring');
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
@@ -203,10 +288,6 @@ const BUMP={
     x.fillStyle='#808080';x.fillRect(0,0,1024,512);
     for(let i=0;i<6500;i++){const px=r()*1024,py=r()*512,len=3+r()*35,a=r()*Math.PI;x.strokeStyle=`rgba(${r()>.5?'240,240,240':'24,24,24'},${.1+r()*.25})`;x.lineWidth=.35+r()*.55;x.beginPath();x.moveTo(px,py);x.lineTo(px+Math.cos(a)*len,py+Math.sin(a)*len);x.stroke()}
   }),
-  muster:tex(x=>{
-    x.fillStyle='#b8b8b8';x.fillRect(0,0,1024,512);
-    for(let i=-512;i<1536;i+=96){x.strokeStyle='#555';x.lineWidth=5;x.beginPath();x.moveTo(i,0);x.lineTo(i+256,256);x.lineTo(i,512);x.stroke();x.strokeStyle='#999';x.lineWidth=2;x.beginPath();x.moveTo(i+8,0);x.lineTo(i+264,256);x.lineTo(i+8,512);x.stroke()}
-  },[8,1]),
   weave:tex(x=>{
     x.fillStyle='#17191b';x.fillRect(0,0,1024,512);
     const size=32;
@@ -224,11 +305,32 @@ const CARBON_MAP=BUMP.weave.clone();CARBON_MAP.encoding=THREE.sRGBEncoding;
 const METAL_COLOR={platin:'#bec5cb',weissgold:'#d4d1c8',gelbgold:'#e6b75b',rosegold:'#d99b86',titan:'#91979e',tantal:'#565d66',carbon:'#25272a'};
 function metal(k,surf='polish'){
   const carbon=k==='carbon',o={color:new THREE.Color(METAL_COLOR[k]).convertSRGBToLinear(),metalness:carbon?0:1,
-    roughness:{polish:.115,matt:.43,hammer:.26,ice:.48,muster:.24}[surf]??.2,
+    roughness:{polish:.115,matt:.43,hammer:.26,ice:.48}[surf]??.2,
     envMapIntensity:1,side:THREE.DoubleSide};
-  if(BUMP[surf]){o.bumpMap=BUMP[surf];o.bumpScale={matt:.018,hammer:.11,ice:.026,muster:.06}[surf]}
+  if(BUMP[surf]){o.bumpMap=BUMP[surf];o.bumpScale={matt:.018,hammer:.11,ice:.026}[surf]}
   if(carbon){o.color.set('#ffffff');o.map=CARBON_MAP;o.bumpMap=BUMP.weave;o.bumpScale=.024;o.roughness=surf==='polish'?.29:.48;o.clearcoat=surf==='polish'?.55:.15;o.clearcoatRoughness=.22}
   return new THREE.MeshPhysicalMaterial(o);
+}
+let engravingTexture=null,engravingKey='';
+function engravedMetal(){
+  const material=metal(st.mat,'polish'),text=st.engraving.trim();
+  const key=JSON.stringify([text,st.w,st.size]);
+  if(key!==engravingKey){
+    if(engravingTexture)engravingTexture.dispose();engravingTexture=null;engravingKey=key;
+    if(text){
+      const c=document.createElement('canvas');c.width=2048;c.height=256;
+      const x=c.getContext('2d');x.fillStyle='#ffffff';x.fillRect(0,0,c.width,c.height);
+      x.font=`600 ${Math.min(72,256*1.5/st.w)}px "Schibsted Grotesk",sans-serif`;
+      x.textAlign='center';x.textBaseline='middle';x.fillStyle='#555555';
+      // Place the inscription opposite the main stone, with readable inner-facing letters.
+      const scale=(c.width/st.size)/(c.height/st.w);
+      for(const center of [0,c.width]){x.save();x.translate(center,c.height/2);x.scale(-scale,1);x.fillText(text,0,0,c.width*.72/scale);x.restore()}
+      engravingTexture=new THREE.CanvasTexture(c);engravingTexture.encoding=THREE.sRGBEncoding;
+      engravingTexture.anisotropy=renderer.capabilities.getMaxAnisotropy();
+    }
+  }
+  if(engravingTexture){material.map=engravingTexture;material.bumpMap=engravingTexture;material.bumpScale=.035}
+  return material;
 }
 const lathe=(p,seg=192,start=0,length=Math.PI*2)=>new THREE.LatheGeometry(p.map(a=>new THREE.Vector2(a[0],a[1])),seg,start,length);
 
@@ -364,36 +466,74 @@ function gemMat(k,sq=false){
   return new THREE.ShaderMaterial({uniforms:{studioMap:{value:studio},facetPlanes:{value:padded},facetCount:{value:planes.length},localCamera:{value:new THREE.Vector3()},worldRotation:{value:new THREE.Matrix3()},ior:{value:ior},dispersion:{value:disp},absorption:{value:new THREE.Vector3(-Math.log(Math.max(.015,color.r)),-Math.log(Math.max(.015,color.g)),-Math.log(Math.max(.015,color.b))).multiplyScalar(k==='white'?0:1.25)}},vertexShader:GEM_VERTEX,fragmentShader:GEM_FRAGMENT});
 }
 
-const Ri=8.6,Ro=10.5;
+function innerRadius(){return st.size/(2*Math.PI)}
+function baseRadius(){return innerRadius()+st.thickness}
+function patternDepthAt(y,angle){
+  if(!st.pattern||st.pattern==='none')return 0;
+  const fade=1-THREE.MathUtils.smoothstep(Math.abs(y),st.w/2-.55,st.w/2-.16);
+  const count=Math.max(4,Math.round(2*Math.PI*baseRadius()/st.patternSpacing));
+  const u=(angle+Math.PI)*count/(2*Math.PI),v=y/st.patternSpacing;
+  let phase;
+  switch(st.pattern){
+    case 'lines':phase=v;break;
+    case 'diagonal':phase=u+v;break;
+    case 'chevron':phase=u+Math.abs(v);break;
+    case 'waves':phase=v+.25*Math.sin(2*Math.PI*u);break;
+    case 'facets':{
+      const triangle=x=>1-Math.abs(2*(x-Math.floor(x))-1);
+      return st.patternDepth*fade*(triangle(u+v)+triangle(u-v))/2;
+    }
+    default:return 0;
+  }
+  return st.patternDepth*fade*((1+Math.cos(2*Math.PI*phase))/2)**8;
+}
 let channelEnd=0;
-function domeExtra(){return Math.min(2.1,st.w*.28)*THREE.MathUtils.clamp(st.dome/100-1,0,1)}
-function outerPeak(){return Ro+domeExtra()}
+function domeExtra(){if(st.bandProfile==='flat'||st.bandProfile==='bevel')return 0;return Math.min(2.1,st.w*.28)*THREE.MathUtils.clamp(st.dome/100-1,0,1)}
+function outerPeak(){return outerBandRadius(0)}
 function outerBandRadius(y){
   const h=st.w/2,t=y/Math.max(.5,h-.16),classic=THREE.MathUtils.clamp(st.dome/100,0,1);
-  return Ro-.34*classic*t*t+domeExtra()*Math.sqrt(Math.max(0,1-(y/h)**2));
+  if(st.bandProfile==='flat')return baseRadius();
+  if(st.bandProfile==='bevel'){
+    const bevelWidth=Math.min(1.2,st.w*.2,st.thickness*.55),bevelDrop=Math.min(.45,st.thickness*.24);
+    const cut=THREE.MathUtils.clamp((Math.abs(y)-(h-bevelWidth))/(bevelWidth-.16),0,1);
+    return baseRadius()-bevelDrop*cut;
+  }
+  if(st.bandProfile==='dshape')return baseRadius()-Math.min(.85,st.thickness*.4)*(.6+.4*classic)*t*t+domeExtra()*Math.sqrt(Math.max(0,1-(y/h)**2));
+  return baseRadius()-.34*classic*t*t+domeExtra()*Math.sqrt(Math.max(0,1-(y/h)**2));
 }
+function stoneSizes(){
+  const embedded=['flush','groove','pave','grat','kanal'].includes(st.emb);
+  const offset={flush:.13,groove:.11,pave:.10,grat:.18,kanal:.13,zarge:.54,vollzarge:.44,krappen:.83,karree:(st.fh??.8)-.10}[st.emb]??.13;
+  const depthLimit=(outerPeak()-innerRadius()+offset-.08)/(embedded?.59:.43);
+  const limit=Math.floor(Math.min(5,st.w-.8,depthLimit)*10)/10;
+  return {main:Math.min(st.mainStoneSize??2.9,limit),side:Math.min(st.sideStoneSize??2,Math.min(3,limit)),limit};
+}
+function channelStoneWidth(){const sizes=stoneSizes();return Math.max(sizes.main,st.side>0?sizes.side:0)}
 function ringProfile(y,angle=0){
   const h=st.w/2,edge=.16,t=y/Math.max(.5,h-edge);
-  let outer=outerBandRadius(y),inner=Ri+.12*t*t;
-  const width=st.emb==='groove'?.7:st.emb==='kanal'?Math.min(3.2,st.w*.48)+.24:0;
+  let outer=outerBandRadius(y),inner=innerRadius()+(st.profile==='flat'?0:.12*t*t);
+  const width=st.stones===false?0:st.emb==='groove'?.7:st.emb==='kanal'?channelStoneWidth()+.24:0;
   if(width){
     const distance=Math.abs(y),half=width/2,feather=.065;
     let depth=(st.emb==='groove'?.22:.66)*THREE.MathUtils.smoothstep(half+feather-distance,0,2*feather);
     if(st.emb==='kanal')depth*=1-THREE.MathUtils.smoothstep(Math.abs(angle),channelEnd-.06,channelEnd+.09);
     outer-=depth;
   }
+  outer=Math.max(inner+.12,outer);
+  outer-=Math.min(patternDepthAt(y,angle),Math.max(0,outer-inner-.12));
   return {inner,outer};
 }
 function settingPlan(){
-  const d=Math.min(3.2,st.w*.48),radius=outerPeak(),items=[],colors=[st.sc[0],st.sc[1],st.stone,st.sc[2],st.sc[3]];
+  if(!st.stones){channelEnd=0;return []}
+  const sizes=stoneSizes(),d=sizes.main,radius=outerPeak(),items=[],colors=[st.sc[0],st.sc[1],st.stone,st.sc[2],st.sc[3]];
   if(st.emb==='pave'){
-    const dia=Math.min(1.7,st.w*.30),spacing=(dia+.10)/radius,n=7;
+    const dia=sizes.side,spacing=(dia+.10)/radius,n=7;
     for(let i=-n;i<=n;i++)items.push({d:dia,th:i*spacing,sk:st.stone,em:'pave',slot:2});
   }else{
-    const channel=st.emb==='kanal',n=channel?Math.max(2,+st.side):+st.side,dd=channel?d:d*.68;
+    const channel=st.emb==='kanal',n=+st.side,dd=sizes.side;
     items.push({d,th:0,sk:st.stone,em:st.emb,slot:2});
     for(let i=1;i<=n;i++){
-      const arc=channel?i*(d+.09):(d/2+dd/2+.36+(i-1)*(dd+.30));
+      const gap=channel?.09:.36,arc=d/2+dd/2+gap+(i-1)*(dd+(channel?.09:.30));
       items.push({d:dd,th:arc/radius,sk:colors[i===1?3:4],em:st.emb,slot:i===1?3:4});
       items.push({d:dd,th:-arc/radius,sk:colors[i===1?1:0],em:st.emb,slot:i===1?1:0});
     }
@@ -408,36 +548,37 @@ function stoneLevel(item){
 }
 function holeFor(item){
   const flush=['flush','groove','pave','grat'].includes(item.em);
-  return {s:item.th*Ro,radius:flush?item.d*.36+.07:item.d*.47,boreRadius:item.d*.20,
+  return {s:item.th*baseRadius(),radius:flush?item.d*.36+.07:item.d*.47,boreRadius:item.d*.20,
     square:item.em==='karree',d:item.d,level:stoneLevel(item),item};
 }
 function outline(hole,r=hole.radius,steps=48){
-  const p=[],tangent=Ro/outerPeak();
+  const p=[],tangent=baseRadius()/outerPeak();
   if(hole.square){for(const [a,b] of [[-1,-1],[-1,1],[1,1],[1,-1]])p.push([hole.s+a*r*tangent,b*r]);}
   else for(let i=0;i<steps;i++){const a=-i*Math.PI*2/steps;p.push([hole.s+Math.cos(a)*r*tangent,Math.sin(a)*r]);}
   return p;
 }
 // Triangulate openings in an unwrapped band, then curve and refine the surface.
 function bandSkin(holes,inside=false){
-  const h=st.w/2-.16,L=Math.PI*Ro,shape=new THREE.Shape();
+  const h=st.w/2-.16,L=Math.PI*baseRadius(),shape=new THREE.Shape();
   shape.moveTo(-L,-h);shape.lineTo(L,-h);shape.lineTo(L,h);shape.lineTo(-L,h);shape.closePath();
   for(const hole of holes){const path=new THREE.Path(),points=outline(hole,inside?hole.boreRadius:hole.radius);points.forEach(([x,y],i)=>i?path.lineTo(x,y):path.moveTo(x,y));path.closePath();shape.holes.push(path)}
   const flat=new THREE.ShapeGeometry(shape),positions=flat.attributes.position,index=flat.index,verts=[],normals=[],uvs=[];
   function vertex(p){
-    const s=p[0],y=p[1],a=s/Ro,profile=ringProfile(y,a),radius=inside?profile.inner:profile.outer;
+    const s=p[0],y=p[1],a=s/baseRadius(),profile=ringProfile(y,a),radius=inside?profile.inner:profile.outer;
     const eps=.001,r0=ringProfile(y-eps,a),r1=ringProfile(y+eps,a),slope=((inside?r1.inner:r1.outer)-(inside?r0.inner:r0.outer))/(2*eps);
     let angular=0;
-    if(!inside&&st.emb==='kanal')angular=(ringProfile(y,a+eps).outer-ringProfile(y,a-eps).outer)/(2*eps*radius);
+    if(!inside&&(st.pattern!=='none'||(st.stones&&st.emb==='kanal')))angular=(ringProfile(y,a+eps).outer-ringProfile(y,a-eps).outer)/(2*eps*radius);
     const n=new THREE.Vector3(Math.cos(a)+angular*Math.sin(a),-slope,-Math.sin(a)+angular*Math.cos(a)).normalize().multiplyScalar(inside?-1:1);
     verts.push(radius*Math.cos(a),y,-radius*Math.sin(a));normals.push(n.x,n.y,n.z);uvs.push((s+L)/(2*L),(y+st.w/2)/st.w);
   }
-  const grooveHalf=inside?0:st.emb==='groove'?.35:st.emb==='kanal'?(Math.min(3.2,st.w*.48)+.24)/2:0;
+  const grooveHalf=inside||!st.stones?0:st.emb==='groove'?.35:st.emb==='kanal'?(channelStoneWidth()+.24)/2:0;
   const creases=grooveHalf?[-grooveHalf-.065,-grooveHalf+.065,grooveHalf-.065,grooveHalf+.065]:[];
+  if(!inside&&st.bandProfile==='bevel'){const cut=st.w/2-Math.min(1.2,st.w*.2,st.thickness*.55);creases.push(-cut,cut)}
   function split(a,b,c,depth=0){
     const ab=Math.hypot(a[0]-b[0],a[1]-b[1]),bc=Math.hypot(b[0]-c[0],b[1]-c[1]),ca=Math.hypot(c[0]-a[0],c[1]-a[1]);
     const lo=Math.min(a[1],b[1],c[1]),hi=Math.max(a[1],b[1],c[1]);
-    const detail=hi-lo>.11&&creases.some(y=>lo<y&&hi>y),long=Math.max(ab,bc,ca)>1.05;
-    if((long||detail)&&depth<16){
+    const detail=hi-lo>.11&&creases.some(y=>lo<y&&hi>y),long=Math.max(ab,bc,ca)>(!inside&&st.pattern!=='none'?Math.min(.16,st.patternSpacing*.08):1.05);
+    if((long||detail)&&depth<24){
       const ab2=long?ab:Math.abs(a[1]-b[1]),bc2=long?bc:Math.abs(b[1]-c[1]),ca2=long?ca:Math.abs(c[1]-a[1]);
       if(ab2>=bc2&&ab2>=ca2){const m=[(a[0]+b[0])/2,(a[1]+b[1])/2];split(a,m,c,depth+1);split(m,b,c,depth+1)}
       else if(bc2>=ca2){const m=[(b[0]+c[0])/2,(b[1]+c[1])/2];split(a,b,m,depth+1);split(a,m,c,depth+1)}
@@ -445,13 +586,13 @@ function bandSkin(holes,inside=false){
     }else{vertex(a);vertex(inside?c:b);vertex(inside?b:c)}
   }
   const p=i=>[positions.getX(i),positions.getY(i)];for(let i=0;i<index.count;i+=3)split(p(index.getX(i)),p(index.getX(i+1)),p(index.getX(i+2)));
-  flat.dispose();const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));return g;
+  flat.dispose();const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));if(!inside&&st.pattern==='facets')g.computeVertexNormals();return g;
 }
 function socket(hole,material){
   const points=outline(hole),n=points.length,V=[];
-  const layers=[{r:hole.radius,kind:'outer'},{r:hole.d*.52,height:hole.level-.05},{r:hole.boreRadius,height:Ri+.10},{r:hole.boreRadius,kind:'inner'}];
+  const layers=[{r:hole.radius,kind:'outer'},{r:hole.d*.52,height:hole.level-.05},{r:hole.boreRadius,height:innerRadius()+.10},{r:hole.boreRadius,kind:'inner'}];
   const at=(layer,i)=>{
-    const q=points[i%n],vx=(q[0]-hole.s)/hole.radius*layer.r,y=q[1]/hole.radius*layer.r,a=(hole.s+vx)/Ro;
+    const q=points[i%n],vx=(q[0]-hole.s)/hole.radius*layer.r,y=q[1]/hole.radius*layer.r,a=(hole.s+vx)/baseRadius();
     const pr=ringProfile(y,a),r=layer.kind==='outer'?pr.outer:layer.kind==='inner'?pr.inner:layer.height;
     return [r*Math.cos(a),y,-r*Math.sin(a)];
   };
@@ -459,14 +600,14 @@ function socket(hole,material){
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(V,3));g.computeVertexNormals();const mesh=new THREE.Mesh(g,material);mesh.name='stone-seat';ring.add(mesh);
   if(['flush','groove'].includes(hole.item.em)){
     const inner=outline(hole),outer=outline(hole,hole.radius+.055),R=[];
-    const point=q=>{const a=q[0]/Ro,y=q[1],r=ringProfile(y,a).outer+.012;return [r*Math.cos(a),y,-r*Math.sin(a)]};
+    const point=q=>{const a=q[0]/baseRadius(),y=q[1],r=ringProfile(y,a).outer+.012;return [r*Math.cos(a),y,-r*Math.sin(a)]};
     for(let i=0;i<n;i++){const a=point(inner[i]),b=point(inner[(i+1)%n]),c=point(outer[(i+1)%n]),d=point(outer[i]);R.push(...a,...b,...d,...b,...c,...d)}
     const rim=new THREE.BufferGeometry();rim.setAttribute('position',new THREE.Float32BufferAttribute(R,3));rim.computeVertexNormals();const lip=new THREE.Mesh(rim,material);lip.name='flush-setting-rim';ring.add(lip);
   }
 }
 function buildBand(holes,body,polished){
   const outer=new THREE.Mesh(bandSkin(holes),body);outer.name='ring-band';outer.castShadow=true;outer.receiveShadow=true;ring.add(outer);
-  const inner=new THREE.Mesh(bandSkin(holes,true),polished);inner.name='ring-bore';inner.castShadow=true;ring.add(inner);
+  const inner=new THREE.Mesh(bandSkin(holes,true),engravedMetal());inner.name='ring-bore';inner.castShadow=true;ring.add(inner);
   const h=st.w/2,e=.16;
   for(const sign of [-1,1]){
     const y=sign*(h-e),{inner:ri,outer:ro}=ringProfile(y,Math.PI),P=[];
@@ -481,7 +622,7 @@ function buildBand(holes,body,polished){
     const sm=metal(st.stripe,'polish');
     for(const sign of [-1,1]){
       const center=sign*(h-.66),P=[];
-      for(let i=0;i<=10;i++){const y=center-.28+.56*i/10;P.push([ringProfile(y,Math.PI).outer+.009,y])}
+      for(let i=0;i<=10;i++){const y=center-.28+.56*i/10;P.push([outerBandRadius(y)+.009,y])}
       const strip=new THREE.Mesh(lathe(P),sm);strip.name='material-inlay';strip.castShadow=true;ring.add(strip);
     }
   }
@@ -535,35 +676,57 @@ function clearRing(){
   ring.traverse(o=>{if(o.geometry&&!o.userData.sharedGeometry)geometries.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m)});
   geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());ring.clear();pickTargets=[];
 }
-let sel=2;
+let sel=2,previewScale=1;
 function setSlot(i,v){if(i===2)st.stone=v;else st.sc[i<2?i:i-1]=v}
 function render(){
+  const sizes=stoneSizes();st.mainStoneSize=sizes.main;st.sideStoneSize=sizes.side;
   clearRing();const items=settingPlan(),holes=items.map(holeFor),bez=metal(st.mat,'polish');
   buildBand(holes,metal(st.mat,st.surf),bez);items.forEach(item=>addStone(item,bez));
-  if(st.emb==='kanal'){
-    const d=items[0].d,half=d/2+.10,start=Math.PI/2-channelEnd,length=channelEnd*2;
+  if(st.stones&&st.emb==='kanal'){
+    const d=channelStoneWidth(),half=d/2+.10,start=Math.PI/2-channelEnd,length=channelEnd*2;
     for(const sign of [-1,1]){
       const y=sign*half,section=[[-.35,y-sign*.08],[-.07,y-sign*.09],[.025,y],[-.04,y+sign*.15],[-.35,y+sign*.15]],P=section.map(([offset,yy])=>[outerBandRadius(yy)+offset,yy]);
       const mesh=new THREE.Mesh(lathe(sign===1?P:P.reverse(),96,start,length),bez);mesh.castShadow=true;ring.add(mesh);
     }
   }
+  const scale=outerPeak()/10.5;cam.position.multiplyScalar(scale/previewScale);previewScale=scale;
+  ctl.minDistance=25*scale;ctl.maxDistance=72*scale;
   floor.position.y=-st.w/2-.10;contact.position.y=floor.position.y+.005;
   $('#wv').textContent=st.w.toString().replace('.',',')+' mm';
-  const sn=ST[st.stone][0];
-  $('#sum').textContent=`${M[st.mat][0]}, ${SURF[st.surf].toLowerCase()}, ${EMB[st.emb].toLowerCase()}, ${$('#wv').textContent}, ${sn}`+(st.stripe!=='none'?`, Streifen aus ${M[st.stripe][0]}`:'');
+  $('#tv').textContent=st.thickness.toString().replace('.',',')+' mm';
+  $('#thickness').value=st.thickness;
+  $('#thickness').setAttribute('aria-valuetext',$('#tv').textContent);
+  const sn=st.stones?`${EMB[st.emb].toLowerCase()}, ${ST[st.stone][0]}`:'ohne Steine';
+  $('#sum').textContent=`${M[st.mat][0]}, ${SURF[st.surf].toLowerCase()}, ${BAND_PROFILE[st.bandProfile].toLowerCase()}, ${$('#wv').textContent} breit, ${$('#tv').textContent} stark, Größe ${st.size}, ${sn}`+(st.pattern!=='none'?`, ${PATTERN[st.pattern]}`:'')+(st.engraving.trim()?', mit Innengravur':'')+(st.stripe!=='none'?`, Streifen aus ${M[st.stripe][0]}`:'');
   document.querySelectorAll('[data-k]').forEach(b=>b.setAttribute('aria-pressed',String(String(st[b.dataset.k])===b.dataset.v)));
-  const nn=st.emb==='pave'?0:st.emb==='kanal'?Math.max(2,+st.side):+st.side;if(Math.abs(sel-2)>nn)sel=2;
+  $('#stones-enabled').checked=st.stones;$('#stone-options').hidden=!st.stones;$('#side-options').hidden=st.emb==='pave';
+  $('#main-size-options').hidden=st.emb==='pave';$('#side-size-options').hidden=!(st.emb==='pave'||+st.side>0);
+  $('#side-size-label').textContent=st.emb==='pave'?'Pavé-Steingröße':'Seitensteingröße';
+  for(const [id,key,max] of [['main-stone','mainStoneSize',sizes.limit],['side-stone','sideStoneSize',Math.min(3,sizes.limit)]]){$('#'+id+'-size').max=max;$('#'+id+'-size').value=st[key];$('#'+id+'-value').textContent=st[key].toString().replace('.',',')+' mm'}
+  const square=st.emb==='karree';
+  const mainCarats='ca. '+formatCarats(estimateCarats(sizes.main,st.stone,square));
+  const sideTypes=st.emb==='pave'?[st.stone]:+st.side===2?st.sc:[st.sc[1],st.sc[2]];
+  const sideCarats=caratRange(sizes.side,sideTypes,square);
+  $('#main-stone-carats').textContent=mainCarats;$('#side-stone-carats').textContent=sideCarats;
+  $('#main-stone-size').setAttribute('aria-valuetext',$('#main-stone-value').textContent+'; geschätzt '+mainCarats);
+  $('#side-stone-size').setAttribute('aria-valuetext',$('#side-stone-value').textContent+'; geschätzt '+sideCarats);
+  $('#dome-options').hidden=st.bandProfile==='flat'||st.bandProfile==='bevel';
+  $('#pattern-options').hidden=st.pattern==='none';
+  for(const [id,key] of [['pattern-depth','patternDepth'],['pattern-spacing','patternSpacing']]){$('#'+id).value=st[key];$('#'+id+'-value').textContent=st[key].toString().replace('.',',')+' mm'}
+  $('#size').value=st.size;$('#size-value').textContent=st.size+' (EU)';$('#diameter-value').textContent='Innenumfang '+st.size+' mm · Innendurchmesser '+(2*innerRadius()).toFixed(2).replace('.',',')+' mm';
+  $('#engraving').value=st.engraving;$('#engraving-count').textContent=st.engraving.length+' / 30';
+  const nn=st.emb==='pave'?0:+st.side;if(Math.abs(sel-2)>nn)sel=2;
   const AA=[st.sc[0],st.sc[1],st.stone,st.sc[2],st.sc[3]];$('#slots').innerHTML='';
   for(let i=2-nn;i<=2+nn;i++){const b=document.createElement('button'),cc=ST[AA[i]];b.className='sw';b.title=i===2?'Hauptstein':'Seitenstein';b.setAttribute('aria-label',b.title+' '+cc[0]);b.style.background=`radial-gradient(circle at 35% 30%,${cc[1]},${cc[2]} 55%,${cc[3]})`;b.setAttribute('aria-pressed',String(i===sel));b.onclick=()=>{sel=i;render()};$('#slots').appendChild(b)}
   document.querySelectorAll('#c-stone [data-v]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===AA[sel])));
   const info=STONE_INFO[AA[sel]];$('#stone-detail').textContent=ST[AA[sel]][0]+' · Mohshärte '+info[0]+' · '+info[1];
-  $('#w').value=st.w;$('#dm').value=st.dome;$('#gfh').style.display=st.emb==='karree'?'':'none';$('#fh').value=st.fh;$('#fv').textContent=st.fh.toString().replace('.',',')+' mm';$('#dv').textContent=st.dome+' %';$('#dm').setAttribute('aria-valuetext',st.dome+' Prozent'+(st.dome>100?', stark gerundet':''));
+  $('#w').value=st.w;$('#dm').value=st.dome;$('#gfh').hidden=!(st.stones&&st.emb==='karree');$('#fh').value=st.fh;$('#fv').textContent=st.fh.toString().replace('.',',')+' mm';$('#dv').textContent=st.dome+' %';$('#dm').setAttribute('aria-valuetext',st.dome+' Prozent'+(st.dome>100?', stark gerundet':''));
   holder.setAttribute('aria-label','3D-Vorschau: '+$('#sum').textContent);
 }
 function updateRotationButton(){const b=$('#rotate');if(b)b.setAttribute('aria-pressed',String(ctl.autoRotate))}
 function setView(view){
   ctl.autoRotate=false;ring.rotation.y=-Math.PI/4;ctl.target.set(0,0,0);
-  const positions={setting:[30,23,30],profile:[46,9,-5],inside:[22,43,22]};cam.position.set(...positions[view]);cam.lookAt(ctl.target);ctl.update();updateRotationButton();
+  const positions={setting:[30,23,30],profile:[46,9,-5],inside:[22,43,22]};cam.position.set(...positions[view]).multiplyScalar(previewScale);cam.lookAt(ctl.target);ctl.update();updateRotationButton();
   document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===view)));
 }
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
@@ -592,15 +755,71 @@ function build(id,key,obj,kind){
   });
 }
 build('#c-mat','mat',M,'sw');build('#c-surf','surf',SURF);build('#c-emb','emb',EMB);build('#c-stone','stone',ST,'stone');build('#c-side','side',{0:'Keine',1:'2 Steine (1 je Seite)',2:'4 Steine (2 je Seite)'});document.querySelectorAll('#c-stone button').forEach(b=>b.onclick=()=>{setSlot(sel,b.dataset.v);render()});
+build('#c-band-profile','bandProfile',BAND_PROFILE);build('#c-pattern','pattern',PATTERN);build('#c-profile','profile',PROFILE);
+document.querySelectorAll('#c-pattern button').forEach(b=>{b.classList.add('pattern-chip');const swatch=document.createElement('span');swatch.className='pattern-preview '+b.dataset.v;swatch.setAttribute('aria-hidden','true');b.prepend(swatch)});
 build('#c-stripe','stripe',{none:['Kein Streifen'],...M},'sw');
 document.querySelector('#c-stripe [data-v=none]').classList.add('none');
+$('#stones-enabled').onchange=e=>{st.stones=e.target.checked;render()};
+for(const [id,key] of [['main-stone-size','mainStoneSize'],['side-stone-size','sideStoneSize'],['size','size'],['pattern-depth','patternDepth'],['pattern-spacing','patternSpacing']]){$('#'+id).oninput=e=>{st[key]=+e.target.value;render()}}
+$('#engraving').oninput=e=>{st.engraving=e.target.value.slice(0,30);render()};
+$('#thickness').oninput=e=>{st.thickness=+e.target.value;render()};
 $('#w').oninput=e=>{st.w=+e.target.value;render()};$('#dm').oninput=e=>{st.dome=+e.target.value;render()};$('#fh').oninput=e=>{st.fh=+e.target.value;render()};
+
+const SAVE_KEY='ring-configurator-v1';
+function downloadFile(name,content,type){
+  const url=URL.createObjectURL(new Blob([content],{type})),link=document.createElement('a');
+  link.href=url;link.download=name;document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function exportDescription(){
+  const lines=['Ringentwurf','',`Material: ${M[st.mat][0]}`,`Oberfläche: ${SURF[st.surf]}`,
+    `Muster: ${PATTERN[st.pattern]}`];
+  if(st.pattern!=='none')lines.push(`Mustertiefe: ${st.patternDepth} mm`, `Musterabstand: ${st.patternSpacing} mm`);
+  lines.push(`Ringgröße (EU / Innenumfang): ${st.size} mm`,`Innendurchmesser: ${(2*innerRadius()).toFixed(2)} mm`,
+    `Breite: ${st.w} mm`,`Ringstärke: ${st.thickness} mm (ohne zusätzliche Wölbung)`,`Wölbung: ${st.bandProfile==='flat'||st.bandProfile==='bevel'?'Entfällt':st.dome+' %'}`,
+    `Ringprofil außen: ${BAND_PROFILE[st.bandProfile]}`,`Innenprofil: ${PROFILE[st.profile]}`,`Kontraststreifen: ${st.stripe==='none'?'Keiner':M[st.stripe][0]}`,
+    `Innengravur: ${st.engraving.trim()||'Keine'}`,`Steine: ${st.stones?'Ja':'Keine'}`);
+  if(st.stones){
+    lines.push(`Fassung: ${EMB[st.emb]}`);
+    if(st.emb==='karree')lines.push(`Fassungshöhe: ${st.fh} mm`);
+    for(const [i,item] of settingPlan().sort((a,b)=>a.th-b.th).entries()){
+      lines.push(`Stein ${i+1} (${item.slot===2&&st.emb!=='pave'?'Hauptstein':item.th<0?'links':item.th>0?'rechts':'Mitte'}): ${ST[item.sk][0]}, ${item.d.toFixed(2)} mm, ca. ${formatCarats(estimateCarats(item.d,item.sk,item.em==='karree'))}`);
+    }
+  }
+  lines.push('','Entwurfsansicht zur Besprechung mit dem Juwelier.');
+  return lines.join('\n');
+}
+$('#save').onclick=()=>{
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify(configurationSnapshot()));$('#load').disabled=false;$('#save-status').textContent='Entwurf in diesem Browser gespeichert.'}
+  catch{$('#save-status').textContent='Speichern ist in diesem Browser nicht verfügbar. Du kannst den Entwurf exportieren.'}
+};
+$('#load').onclick=()=>{
+  try{
+    const saved=JSON.parse(localStorage.getItem(SAVE_KEY));
+    if(!saved||saved.version!==1||!saved.configuration)throw new Error('Invalid saved configuration');
+    st=normalizeConfig(saved.configuration);sel=2;render();$('#save-status').textContent='Gespeicherter Entwurf geladen.';
+  }catch{$('#save-status').textContent='Der gespeicherte Entwurf konnte nicht geladen werden.'}
+};
+let exportKind='text';
+function openExport(kind){
+  exportKind=kind;$('#export-title').textContent=kind==='text'?'Ringentwurf für den Juwelier':'Konfiguration als JSON';
+  $('#export-content').value=kind==='text'?exportDescription():JSON.stringify(configurationSnapshot(),null,2);
+  $('#export-status').textContent='';$('#export-dialog').showModal();
+}
+$('#export-text').onclick=()=>openExport('text');$('#export-json').onclick=()=>openExport('json');
+$('#close-export').onclick=()=>$('#export-dialog').close();
+$('#download-export').onclick=()=>{downloadFile('ringentwurf.'+(exportKind==='text'?'txt':'json'),$('#export-content').value,exportKind==='text'?'text/plain;charset=utf-8':'application/json');$('#export-status').textContent='Download gestartet. Alternativ kannst du den Text kopieren.'};
+$('#copy-export').onclick=async()=>{
+  try{await navigator.clipboard.writeText($('#export-content').value);$('#export-status').textContent='In die Zwischenablage kopiert.'}
+  catch{$('#export-content').focus();$('#export-content').select();$('#export-status').textContent='Text ausgewählt. Mit Strg+C oder ⌘C kopieren.'}
+};
+try{$('#load').disabled=!localStorage.getItem(SAVE_KEY)}catch{}
 
 const cols=[['A','Schlicht & klassisch'],['B','Texturiert & maskulin'],['C','Technisch & kontrastreich'],['D','Avantgardistisch & breit']];
 const rows=['Bündig & versenkt','Struktur- & fugenintegriert'];
 const cells=[
  [['Klassischer Platinring',{mat:'platin',surf:'polish',emb:'flush',w:6,stripe:'none'}],['Gehämmertes Gelbgoldband',{mat:'gelbgold',surf:'hammer',emb:'flush',w:7,stripe:'none'}],['Dunkler Tantal-Ring',{mat:'tantal',surf:'matt',emb:'flush',w:7,stripe:'none',stone:'black'}],['Breites Band, dezentriert',{mat:'weissgold',surf:'polish',emb:'flush',w:9,stripe:'none'}]],
- [['Fuge mit Einzelstein',{mat:'platin',surf:'polish',emb:'groove',w:6,stripe:'none'}],['Eismattes Band mit Teilzarge',{mat:'platin',surf:'ice',emb:'zarge',w:7,stripe:'none'}],['Technischer Titan/Carbon-Ring',{mat:'titan',surf:'matt',emb:'groove',w:7,stripe:'carbon',stone:'black'}],['Muster-Band mit Zargen-Fassung',{mat:'titan',surf:'muster',emb:'zarge',w:9,stripe:'none'}]]
+ [['Fuge mit Einzelstein',{mat:'platin',surf:'polish',emb:'groove',w:6,stripe:'none'}],['Eismattes Band mit Teilzarge',{mat:'platin',surf:'ice',emb:'zarge',w:7,stripe:'none'}],['Technischer Titan/Carbon-Ring',{mat:'titan',surf:'matt',emb:'groove',w:7,stripe:'carbon',stone:'black'}],['Muster-Band mit Zargen-Fassung',{mat:'titan',surf:'polish',pattern:'chevron',emb:'zarge',w:9,stripe:'none'}]]
 ];
 const g=$('#mx');
 g.appendChild(document.createElement('div'));
@@ -609,14 +828,14 @@ cells.forEach((r,i)=>{
   const h=document.createElement('div');h.innerHTML=`<b>${i+1}. ${rows[i]}</b>`;g.appendChild(h);
   r.forEach(([n,cfg])=>{const b=document.createElement('button');b.className='cell';
     b.innerHTML=`<span class="dot" style="background:${sg(M[cfg.mat])}"></span><span>${n}</span>`;
-    b.onclick=()=>{st={...st,stone:'white',...cfg};render()};g.appendChild(b)});
+    b.onclick=()=>{st={...st,pattern:'none',stone:'white',...cfg};render()};g.appendChild(b)});
 });
 [['Der Understatement-Klassiker',{mat:'platin',surf:'polish',emb:'flush',w:6,stripe:'none',stone:'white'}],
  ['Der Charakter-Ring',{mat:'gelbgold',surf:'hammer',emb:'karree',w:7,stripe:'none',stone:'white'}],
  ['Der Moderne Tech-Ring',{mat:'carbon',surf:'matt',emb:'flush',w:7,stripe:'platin',stone:'black'}],
  ['Der Sportlich-Elegante',{mat:'weissgold',surf:'polish',emb:'groove',w:6,stripe:'none',stone:'white'}],
- ['Der Avantgardist',{mat:'tantal',surf:'muster',emb:'zarge',w:9,stripe:'gelbgold',stone:'white'}]
-].forEach(([n,cfg])=>{const b=document.createElement('button');b.className='chip';b.textContent=n;b.onclick=()=>{st={...st,...cfg};render()};$('#pre').appendChild(b)});
+ ['Der Avantgardist',{mat:'tantal',surf:'polish',pattern:'chevron',emb:'zarge',w:9,stripe:'gelbgold',stone:'white'}]
+].forEach(([n,cfg])=>{const b=document.createElement('button');b.className='chip';b.textContent=n;b.onclick=()=>{st={...st,pattern:'none',...cfg};render()};$('#pre').appendChild(b)});
 render();
 </script>
 </body>
