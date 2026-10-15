@@ -292,3 +292,60 @@ test('large channel and pave stones have separated angular footprints at their a
     }
   }
 });
+
+test('cathedral roots blend into the shank and gallery joins retain a useful width',()=>{
+  const m=model({ringType:'engagement',emb:'krappen',shoulder:'cathedral',w:2.5,cathedralWidth:1.5,mainStoneSize:6,fh:3,side:0});
+  assert.ok(m.run('cathedralShoulderSectionWidth({d:6},0)')>=2,'root must overlap most of the shank width');
+  assert.ok(m.run('cathedralShoulderSectionWidth({d:6},1)')>=1,'gallery join must not pinch into a wire');
+  const points=m.run('cathedralShoulderPoints(settingPlan(),1)');
+  assert.ok(Math.hypot(...[points[0][0],points[0][2]])<m.run('outerPeak()')-.3,'root must start inside the shank');
+});
+test('cathedral arches do not flatten at intermediate profile knots',()=>{
+  const m=model({ringType:'engagement',emb:'krappen',shoulder:'cathedral',w:2.5,cathedralWidth:1.5,mainStoneSize:6,fh:3,side:1});
+  const p=m.run('cathedralShoulderProfile()');
+  for(const [a] of p.knots.slice(1,-1)){
+    const slope=m.run(`(cathedralShoulderRadius(${a-.0001})-cathedralShoulderRadius(${a+.0001}))/.0002`);
+    assert.ok(slope>.2,'intermediate join must keep rising rather than form a plateau');
+  }
+});
+
+test('five-stone cathedral culets clear the outer shoulder surface',()=>{
+  const m=model({ringType:'engagement',emb:'krappen',shoulder:'cathedral',w:2.5,thickness:1.9,cathedralWidth:1.5,mainStoneSize:6,sideStoneSize:2,fh:3,side:2});
+  const item=m.run('settingPlan().find(item=>item.slot===4)');
+  const culet=m.run(`stoneLevel(${JSON.stringify(item)})`)-.43*item.d;
+  // Independent raycast of the actual swept mesh put its surface at 11.444 mm.
+  assert.ok(culet>11.494,'leave at least 0.05 mm above the shoulder surface');
+});
+
+test('cathedral shoulder taper is independent of its width',()=>{
+  const m=model({ringType:'engagement',emb:'krappen',shoulder:'cathedral',w:2.5,cathedralWidth:1.5,cathedralProfile:'constant',mainStoneSize:6});
+  for(const t of [0,.25,.5,.75,1])assert.equal(m.run(`cathedralShoulderSectionWidth({d:6},${t})`),1.5);
+  m.st.cathedralProfile='tapered';
+  assert.ok(m.run('cathedralShoulderSectionWidth({d:6},0)>cathedralShoulderSectionWidth({d:6},1)'));
+});
+test('cathedral shape and side-stone seating round trip independently',()=>{
+  const run=configModel();
+  run("st=normalizeConfig({ringType:'engagement',shoulder:'cathedral',cathedralProfile:'constant',cathedralStoneSeat:'flush'})");
+  const cfg=run('parseConfigurationJSON(JSON.stringify(configurationSnapshot()))');
+  assert.equal(cfg.cathedralProfile,'constant');assert.equal(cfg.cathedralStoneSeat,'flush');
+  const invalid=run("normalizeConfig({cathedralProfile:'invalid',cathedralStoneSeat:'invalid'})");
+  assert.equal(invalid.cathedralProfile,'tapered');assert.equal(invalid.cathedralStoneSeat,'raised');
+});
+test('flush cathedral seats apply only to side stones and fit inside the shoulder',()=>{
+  const m=model({ringType:'engagement',emb:'krappen',shoulder:'cathedral',w:2.5,thickness:1.9,cathedralWidth:1.5,cathedralProfile:'constant',cathedralStoneSeat:'flush',mainStoneSize:6,sideStoneSize:2,fh:3,side:2});
+  const items=m.run('settingPlan()');
+  assert.equal(items.find(i=>i.slot===2).em,'krappen');
+  for(const item of items.filter(i=>i.slot!==2)){
+    assert.equal(item.em,'flush');assert.equal(item.cathedralFlush,true);
+    assert.ok(item.d<=1.1+1e-10,'leave metal beside the stone');
+    const frame=m.run(`cathedralStoneFrame(${JSON.stringify(item)})`);
+    const table=frame.origin.map((v,i)=>v+frame.normal[i]*.16*item.d);
+    assert.ok(Math.hypot(...table.map((v,i)=>v-frame.surface[i]))<=.041);
+  }
+});
+
+test('flush side-stone size limits stay on the slider and saved configuration step',()=>{
+  const m=model({ringType:'engagement',emb:'krappen',shoulder:'cathedral',cathedralStoneSeat:'flush',cathedralProfile:'tapered',w:2.5,cathedralWidth:1.5,mainStoneSize:6,sideStoneSize:2,side:1,thickness:1.9});
+  const size=m.run('stoneSizes().side');
+  assert.ok(Math.abs(size*10-Math.round(size*10))<1e-9,'a save/load must not silently round the fitted stone to a different size');
+});

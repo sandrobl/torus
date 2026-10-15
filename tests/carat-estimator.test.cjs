@@ -26,3 +26,11 @@ test('mixed side stones show a per-stone range and pave uses its own selected st
   assert.equal(run("caratRange(3,['white','aquamarine'],false)"),'ca. 0,08–0,10 ct je Stein');
   assert.equal(run("caratRange(2,['white','white'],false)"),'ca. 0,03 ct je Stein');
 });
+
+test('the side-stone weight label uses round flush stones even under a Karree main setting',()=>{
+  const ctx=vm.createContext({});
+  vm.runInContext(declarations+html.slice(html.indexOf('function innerRadius()'),html.indexOf('function holeFor(')),ctx);
+  vm.runInContext("st={...st,ringType:'engagement',emb:'karree',shoulder:'cathedral',cathedralStoneSeat:'flush',side:1};const sizes={side:1.1};",ctx);
+  const label=html.slice(html.indexOf('  const sideTypes='),html.indexOf("  $('#main-stone-carats').textContent"));
+  assert.equal(vm.runInContext(label+'sideCarats',ctx),'ca. 0,005 ct je Stein');
+});

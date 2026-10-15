@@ -100,7 +100,7 @@ dialog textarea{display:block;width:100%;height:320px;resize:vertical;background
 <div class="g"><label class="toggle"><input type="checkbox" role="switch" id="stones-enabled" checked aria-controls="stone-options"><span class="toggle-track" aria-hidden="true"></span>Mit Steinen</label><small class="range-hint">Aus: ein schlichtes Ringband. Deine Steinwahl bleibt erhalten.</small></div>
 <fieldset id="stone-options"><legend class="sr-only">Steine konfigurieren</legend>
 <div class="g"><span>Stein-Einbettung</span><div class="row" id="c-emb"></div></div>
-<div class="g" id="shoulder-options" hidden><span>Ringschulter</span><div class="row" id="c-shoulder"></div><small class="range-hint">Übergang vom Ringband zum Hauptstein: gerade, schmal zulaufend oder erhöht.</small><div id="shoulder-width-options" hidden><span>Breite am Hauptstein: <b id="shoulder-width-value"></b></span><input type="range" id="shoulder-width" min="50" max="100" step="5" aria-label="Schulterbreite in Prozent der Ringbreite"></div><div id="cathedral-width-options" hidden><span>Breite der Kathedral-Schultern: <b id="cathedral-width-value"></b></span><input type="range" id="cathedral-width" min="0.4" max="3" step="0.1" aria-label="Breite der Kathedral-Schultern in Millimetern"></div></div>
+<div class="g" id="shoulder-options" hidden><span>Ringschulter</span><div class="row" id="c-shoulder"></div><small class="range-hint">Übergang vom Ringband zum Hauptstein: gerade, schmal zulaufend oder erhöht.</small><div id="shoulder-width-options" hidden><span>Breite am Hauptstein: <b id="shoulder-width-value"></b></span><input type="range" id="shoulder-width" min="50" max="100" step="5" aria-label="Schulterbreite in Prozent der Ringbreite"></div><div id="cathedral-width-options" hidden><span>Breite der Kathedral-Schultern: <b id="cathedral-width-value"></b></span><input type="range" id="cathedral-width" min="0.4" max="3" step="0.1" aria-label="Breite der Kathedral-Schultern in Millimetern"><span>Verlauf der Kathedral-Schultern</span><div class="row" id="c-cathedral-profile"></div><div id="cathedral-side-seat-options"><span>Seitensteine in den Schultern</span><div class="row" id="c-cathedral-seat"></div><small class="range-hint" id="cathedral-seat-hint">Bündige Seitensteine werden an Breite und Stärke der Schulter angepasst. Der Hauptstein bleibt erhöht.</small></div></div></div>
 <div class="g" id="cut-options" hidden><span>Schliff des Hauptsteins</span><div class="row" id="c-cut"></div></div>
 <div class="g" id="prong-options" hidden><span>Krappen am Hauptstein</span><div class="row" id="c-prongs"></div></div>
 <div class="g" id="main-size-options"><span class="size-heading"><span>Hauptsteingröße: <b id="main-stone-value"></b></span><span class="carat-estimate" id="main-stone-carats" aria-live="polite"></span></span><input type="range" id="main-stone-size" min="1" max="5" step="0.1" aria-label="Hauptsteingröße in Millimetern"><small class="range-hint" id="stone-size-hint">Durchmesser · Bei Karree: Kantenlänge · An Ringbreite und Fassungstiefe angepasst</small></div>
@@ -194,9 +194,11 @@ const STONE_INFO={
 };
 const RING_TYPE={men:'Herrenring',women:'Damenring',engagement:'Verlobungsring für sie'};
 const SHOULDER={straight:'Gerade',tapered:'Zulaufend',cathedral:'Kathedral / erhöht'};
+const CATHEDRAL_PROFILE={constant:'Gleich breit',tapered:'Zulaufend'};
+const CATHEDRAL_SEAT={raised:'Aufgesetzt',flush:'Bündig in der Schulter'};
 const CUT={round:'Rund / Brillant',oval:'Oval',princess:'Princess / quadratisch'};
 const ENGAGEMENT_STYLE={solitaire:'Solitär',three:'Drei Steine',five:'Fünf Steine'};
-const DEFAULT_CONFIG={cathedralWidth:.6,shoulder:'straight',shoulderWidth:65,ringType:'men',cut:'round',prongs:4,engagementStyle:'solitaire',mat:'platin',surf:'polish',emb:'flush',stone:'white',w:6,thickness:1.9,stripe:'none',dome:40,side:0,sc:['white','white','white','white'],fh:.8,stones:true,pattern:'none',patternDepth:.15,patternSpacing:2,size:54,profile:'comfort',engraving:'',mainStoneSize:2.9,sideStoneSize:2,bandProfile:'rounded'};
+const DEFAULT_CONFIG={cathedralProfile:'tapered',cathedralStoneSeat:'raised',cathedralWidth:1.5,shoulder:'straight',shoulderWidth:65,ringType:'men',cut:'round',prongs:4,engagementStyle:'solitaire',mat:'platin',surf:'polish',emb:'flush',stone:'white',w:6,thickness:1.9,stripe:'none',dome:40,side:0,sc:['white','white','white','white'],fh:.8,stones:true,pattern:'none',patternDepth:.15,patternSpacing:2,size:54,profile:'comfort',engraving:'',mainStoneSize:2.9,sideStoneSize:2,bandProfile:'rounded'};
 let st={...DEFAULT_CONFIG,sc:[...DEFAULT_CONFIG.sc]};
 const $=s=>document.querySelector(s);
 const sg=m=>`linear-gradient(135deg,${m[1]},${m[2]} 55%,${m[3]})`;
@@ -204,7 +206,7 @@ const sg=m=>`linear-gradient(135deg,${m[1]},${m[2]} 55%,${m[3]})`;
 function normalizeConfig(raw){
   const cfg={...DEFAULT_CONFIG,sc:[...DEFAULT_CONFIG.sc]};
   if(!raw||typeof raw!=='object')return cfg;
-  for(const [key,choices] of Object.entries({mat:M,surf:SURF,emb:EMB,stone:ST,stripe:{none:true,...M},pattern:PATTERN,profile:PROFILE,bandProfile:BAND_PROFILE,ringType:RING_TYPE,cut:CUT,engagementStyle:ENGAGEMENT_STYLE,shoulder:SHOULDER})){
+  for(const [key,choices] of Object.entries({mat:M,surf:SURF,emb:EMB,stone:ST,stripe:{none:true,...M},pattern:PATTERN,profile:PROFILE,bandProfile:BAND_PROFILE,ringType:RING_TYPE,cut:CUT,engagementStyle:ENGAGEMENT_STYLE,shoulder:SHOULDER,cathedralProfile:CATHEDRAL_PROFILE,cathedralStoneSeat:CATHEDRAL_SEAT})){
     if(typeof raw[key]==='string'&&Object.prototype.hasOwnProperty.call(choices,raw[key]))cfg[key]=raw[key];
   }
   for(const [key,[lo,hi,step]] of Object.entries({cathedralWidth:[.4,3,.1],shoulderWidth:[50,100,5],w:[2,10,.5],thickness:[1,4,.1],dome:[0,200,5],fh:[.4,5,.1],side:[0,2,1],size:[44,76,1],patternDepth:[.05,.3,.05],patternSpacing:[1,5,.5],mainStoneSize:[1,8,.1],sideStoneSize:[.5,3,.1]})){
@@ -240,6 +242,7 @@ renderer.toneMappingExposure=1.12;
 renderer.outputEncoding=THREE.sRGBEncoding;
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.shadowMap.autoUpdate=false;
 renderer.setClearColor(0x000000,0);
 holder.appendChild(renderer.domElement);
 const scene=new THREE.Scene();
@@ -282,10 +285,26 @@ const contact=(()=>{
   [[0,'rgba(25,32,36,.02)'],[.35,'rgba(25,32,36,.03)'],[.53,'rgba(25,32,36,.17)'],[.68,'rgba(25,32,36,.08)'],[1,'rgba(25,32,36,0)']].forEach(([p,v])=>g.addColorStop(p,v));
   x.fillStyle=g;x.fillRect(0,0,256,256);const mesh=new THREE.Mesh(new THREE.PlaneGeometry(32,32),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));mesh.rotation.x=-Math.PI/2;scene.add(mesh);return mesh;
 })();
-function fit(){const w=holder.clientWidth,h=holder.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
+// Preview scheduling: draw only while the camera moves or the design changes.
+let visible=!document.hidden,previewFrame=null,previewDirty=true,rebuildPending=false;
+function requestPreviewFrame(){if(visible&&previewFrame===null)previewFrame=requestAnimationFrame(drawPreview)}
+function invalidatePreview(){previewDirty=true;requestPreviewFrame()}
+function scheduleRender(){rebuildPending=true;invalidatePreview()}
+function drawPreview(){
+  previewFrame=null;if(!visible)return;
+  if(rebuildPending){rebuildPending=false;render()}
+  const changed=ctl.update();
+  if(previewDirty||changed||ctl.autoRotate){previewDirty=false;renderer.render(scene,cam)}
+  if(changed||ctl.autoRotate)requestPreviewFrame();
+}
+ctl.addEventListener('change',invalidatePreview);
+document.addEventListener('visibilitychange',()=>{
+  visible=!document.hidden;
+  if(visible)invalidatePreview();
+  else if(previewFrame!==null){cancelAnimationFrame(previewFrame);previewFrame=null}
+});
+function fit(){const w=holder.clientWidth,h=holder.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();invalidatePreview()}
 new ResizeObserver(fit).observe(holder);fit();
-let visible=true;document.addEventListener('visibilitychange',()=>{visible=!document.hidden});
-(function loop(){requestAnimationFrame(loop);if(visible){ctl.update();renderer.render(scene,cam)}})();
 
 function seeded(seed){return()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}}
 function tex(fn,rep=[6,1]){
@@ -527,6 +546,7 @@ function outerBandRadius(y){
   return baseRadius()-.34*classic*t*t+domeExtra()*Math.sqrt(Math.max(0,1-(y/h)**2));
 }
 function raisedSetting(em=st.emb){return st.ringType==='engagement'&&['krappen','zarge','vollzarge','karree'].includes(em)}
+function cathedralFlushSides(){return st.stones&&raisedSetting()&&st.shoulder==='cathedral'&&st.cathedralStoneSeat==='flush'&&+st.side>0}
 function shoulderWidthFactor(angle){
   if(!st.stones||!raisedSetting()||st.shoulder!=='tapered')return 1;
   const t=Math.min(1,Math.abs(angle)/1.1),blend=1-t*t*(3-2*t);
@@ -534,7 +554,12 @@ function shoulderWidthFactor(angle){
 }
 function stoneShape(item){return item.em==='karree'?'princess':raisedSetting(item.em)&&item.slot===2?(st.cut??'round'):'round'}
 function stoneSizes(){
-  if(raisedSetting())return {main:Math.min(st.mainStoneSize??6,8),side:Math.min(st.sideStoneSize??2,3),limit:8};
+  if(raisedSetting()){
+    const main=Math.min(st.mainStoneSize??6,8);
+    const width=cathedralShoulderWidth(),seatWidth=st.cathedralProfile==='constant'?width:Math.min(width,1.4,Math.max(.9,main*.22));
+    const sideLimit=cathedralFlushSides()?Math.max(.5,Math.floor((Math.min(3,seatWidth-.4,(Math.min(1.5,st.thickness*.8)-.18)/.59)+1e-9)*10)/10):3;
+    return {main,side:Math.min(st.sideStoneSize??2,sideLimit),sideLimit,limit:8};
+  }
   const embedded=['flush','groove','pave','grat','kanal'].includes(st.emb);
   const offset={flush:.13,groove:.11,pave:.10,grat:.18,kanal:.13,zarge:.54,vollzarge:.44,krappen:.83,karree:(st.fh??.8)-.10}[st.emb]??.13;
   const available=outerPeak()-innerRadius()+offset-.08;
@@ -571,36 +596,65 @@ function prongMountPlan(item){
   }
   return {square,count,lowerY,galleryY,galleryRadius,lowerRadius,prongRadius,prongs,cornerCaps};
 }
-function cathedralShoulderWidth(){return Math.max(.4,Math.min(st.w,3,st.cathedralWidth??.6))}
+function cathedralShoulderWidth(){return Math.max(cathedralFlushSides()?1:.4,Math.min(st.w,3,st.cathedralWidth??1.5))}
 function cathedralShoulderSectionWidth(main,t){
-  const width=cathedralShoulderWidth(),tip=Math.min(width,.55,main.d*.22),u=Math.max(0,Math.min(1,(t-.45)/.55));
-  return width+(tip-width)*u*u*(3-2*u);
+  const width=cathedralShoulderWidth();if(st.cathedralProfile==='constant')return width;
+  const root=Math.max(width,st.w*.85),tip=Math.min(width,1.4,cathedralFlushSides()?Math.max(.9,main.d*.22):main.d*.22);
+  const blend=u=>{u=Math.max(0,Math.min(1,u));return u*u*(3-2*u)};
+  return root+(width-root)*blend(t/.5)+(tip-width)*blend((t-.5)/.5);
+}
+function cathedralShoulderDepth(main,t){
+  const root=Math.min(1.5,st.thickness*.8),tip=Math.max(.30,Math.min(.65,main.d*.09));
+  const depth=root+(tip-root)*t*t*(3-2*t);
+  return cathedralFlushSides()?Math.max(depth,.59*stoneSizes().side+.18):depth;
 }
 function cathedralShoulderProfile(){
   const base=outerPeak(),sizes=stoneSizes(),d=sizes.main,main={d,em:st.emb,slot:2},lift=Math.max(st.fh??3,.43*d+.15);
   const basket=base+lift+(st.emb==='krappen'?prongMountPlan(main).galleryY:-d*.43*.44),end=st.emb==='krappen'?prongMountPlan(main).galleryRadius:d*.5+.08;
-  const endAngle=Math.atan2(end,basket),endRadius=Math.hypot(basket,end),knots=[];
+  const endAngle=Math.atan2(end,basket),endRadius=Math.hypot(basket,end),rootRadius=base-cathedralShoulderDepth(main,0)*.65,knots=[];
   if(+st.side>0){
     const dd=sizes.side,mainHalf=Math.atan2(d/2,base+lift-.012*d),sideHalf=Math.atan2(dd/2,base+.43*dd+.3-.012*dd);
     const first=Math.max((d/2+dd/2+.36)/base,mainHalf+sideHalf+.36/base),step=Math.max((dd+.30)/base,2*sideHalf+.30/base);
     const root=Math.max(1.05,first+(+st.side-1)*step+sideHalf+.2),sideLift=Math.max(.03,Math.min(endRadius-base-.08,lift-.43*dd-.60));
-    knots.push([root,base-.10],[Math.max(first,endAngle+.06),base+sideLift]);
-  }else knots.push([Math.max(1.05,endAngle+.5),base-.10],[(1.05+endAngle)/2,base+(endRadius-base)*.35]);
+    knots.push([root,rootRadius],[Math.max(first,endAngle+.06),base+sideLift]);
+  }else knots.push([Math.max(1.05,endAngle+.5),rootRadius]);
   knots.push([endAngle,endRadius]);
   return {knots,basket,end};
 }
-function cathedralShoulderRadius(angle){
-  const {knots}=cathedralShoulderProfile(),a=Math.abs(angle);
+function cathedralShoulderRadius(angle,profile=cathedralShoulderProfile()){
+  const {knots}=profile,a=Math.abs(angle);
+  // Monotone cubic interpolation: continuous slope at side-stone supports, no flat spot.
+  const slopes=knots.slice(1).map((p,i)=>(p[1]-knots[i][1])/(knots[i][0]-p[0]));
+  const tangent=i=>i===0||i===knots.length-1?0:slopes[i-1]*slopes[i]<=0?0:2/(1/slopes[i-1]+1/slopes[i]);
   if(a>=knots[0][0])return knots[0][1];
   for(let i=1;i<knots.length;i++)if(a>=knots[i][0]){
-    const high=knots[i-1],low=knots[i],t=(high[0]-a)/(high[0]-low[0]),blend=t*t*(3-2*t);
-    return high[1]+(low[1]-high[1])*blend;
+    const high=knots[i-1],low=knots[i],span=high[0]-low[0],t=(high[0]-a)/span,t2=t*t,t3=t2*t;
+    return (2*t3-3*t2+1)*high[1]+(t3-2*t2+t)*span*tangent(i-1)+(-2*t3+3*t2)*low[1]+(t3-t2)*span*tangent(i);
   }
   return knots.at(-1)[1];
 }
+function cathedralShoulderProgress(angle,profile=cathedralShoulderProfile()){
+  const {knots}=profile;
+  return THREE.MathUtils.clamp((knots[0][0]-Math.abs(angle))/(knots[0][0]-knots.at(-1)[0]),0,1);
+}
+function cathedralShoulderSupportRadius(angle){
+  const profile=cathedralShoulderProfile(),r=cathedralShoulderRadius(angle,profile),eps=.0001;
+  const slope=(cathedralShoulderRadius(angle-eps,profile)-cathedralShoulderRadius(angle+eps,profile))/(2*eps*r);
+  // A radial stone axis crosses the swept section obliquely; include that slope
+  // when converting the normal half-depth to a radial surface height.
+  return r+cathedralShoulderDepth({d:stoneSizes().main},cathedralShoulderProgress(angle,profile))*.5*Math.hypot(1,slope);
+}
+function cathedralStoneFrame(item){
+  const profile=cathedralShoulderProfile(),a=Math.abs(item.th),sign=Math.sign(item.th)||1,r=cathedralShoulderRadius(a,profile),eps=.0001;
+  const dr=(cathedralShoulderRadius(a+eps,profile)-cathedralShoulderRadius(a-eps,profile))/(2*eps),length=Math.hypot(r,dr);
+  const normal=[(r*Math.cos(a)+dr*Math.sin(a))/length,0,sign*(-r*Math.sin(a)+dr*Math.cos(a))/length];
+  const halfDepth=cathedralShoulderDepth({d:stoneSizes().main},cathedralShoulderProgress(a,profile))/2;
+  const center=[r*Math.cos(a),0,-sign*r*Math.sin(a)],surface=center.map((v,i)=>v+normal[i]*halfDepth);
+  return {normal,surface,origin:surface.map((v,i)=>v+normal[i]*(.04-.16*item.d))};
+}
 function cathedralShoulderPoints(items,sign){
-  const {knots,basket,end}=cathedralShoulderProfile(),start=knots[0][0],finish=knots.at(-1)[0],points=[];
-  for(let i=0;i<=32;i++){const a=start+(finish-start)*i/32,r=cathedralShoulderRadius(a);points.push([r*Math.cos(a),0,-sign*r*Math.sin(a)])}
+  const profile=cathedralShoulderProfile(),{knots,basket,end}=profile,start=knots[0][0],finish=knots.at(-1)[0],points=[];
+  for(let i=0;i<=32;i++){const a=start+(finish-start)*i/32,r=cathedralShoulderRadius(a,profile);points.push([r*Math.cos(a),0,-sign*r*Math.sin(a)])}
   points[32]=[basket,0,-sign*end];return points;
 }
 function settingPlan(){
@@ -617,17 +671,19 @@ function settingPlan(){
       const mainHalf=stoneHalfAngle({d,em:st.emb,slot:2}),sideHalf=stoneHalfAngle({d:dd,em:st.emb,slot:1});
       const first=Math.max((d/2+dd/2+gap)/radius,mainHalf+sideHalf+gap/radius);
       const step=Math.max((dd+sideGap)/radius,2*sideHalf+sideGap/radius),angle=first+(i-1)*step;
-      items.push({d:dd,th:angle,sk:colors[i===1?3:4],em:st.emb,slot:i===1?3:4});
-      items.push({d:dd,th:-angle,sk:colors[i===1?1:0],em:st.emb,slot:i===1?1:0});
+      const seat=cathedralFlushSides()?{em:'flush',cathedralFlush:true}:{em:st.emb};
+      items.push({d:dd,th:angle,sk:colors[i===1?3:4],...seat,slot:i===1?3:4});
+      items.push({d:dd,th:-angle,sk:colors[i===1?1:0],...seat,slot:i===1?1:0});
     }
   }
   channelEnd=st.emb==='kanal'?Math.max(...items.map(i=>Math.abs(i.th)+Math.max(i.d/2/radius,stoneHalfAngle(i))))+.16:0;
   return items;
 }
 function stoneLevel(item){
+  if(item.cathedralFlush){const {origin}=cathedralStoneFrame(item);return Math.hypot(origin[0],origin[2])}
   const {d,em}=item,cr=.16*d,base=outerPeak();
   if(raisedSetting(em)){
-    if(item.slot!=null&&item.slot!==2){const cathedral=st.shoulder==='cathedral'&&Number.isFinite(item.th),shoulder=cathedral?cathedralShoulderRadius(item.th):base;return shoulder+.43*d+(cathedral?.45:.3)}
+    if(item.slot!=null&&item.slot!==2){const cathedral=st.shoulder==='cathedral'&&Number.isFinite(item.th),shoulder=cathedral?cathedralShoulderSupportRadius(item.th):base;return shoulder+.43*d+(cathedral?.20:.3)}
     return base+Math.max(st.fh??3,.43*d+.15);
   }
   return {flush:base+.13-cr,groove:base+.11-cr,pave:base+.10-cr,grat:base+.18-cr,kanal:base+.13-cr,
@@ -726,12 +782,94 @@ function taperShoulders(){
 function buildCathedralShoulders(items,material){
   if(!st.stones||!raisedSetting()||st.shoulder!=='cathedral')return;
   const main=items.find(item=>item.slot===2);if(!main)return;
+  const profile=cathedralShoulderProfile();
   for(const sign of [-1,1]){
     const points=cathedralShoulderPoints(items,sign);
-    const radius=Math.min(.32,st.w*.13),curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p))),arch=new THREE.Mesh(new THREE.TubeGeometry(curve,64,radius,8,false),material),p=arch.geometry.attributes.position;arch.castShadow=true;ring.add(arch);
-    // TubeGeometry has nine vertices per section (eight sides and the seam).
-    for(let i=0;i<p.count;i++){const t=Math.floor(i/9)/64;p.setY(i,p.getY(i)*cathedralShoulderSectionWidth(main,t)/(2*radius))}
+    const segments=48,sides=16,curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));
+    const geometry=new THREE.TubeGeometry(curve,segments,1,sides,false),p=geometry.attributes.position;
+    // Sweep a rounded rectangular section in the ring plane. The buried, broad root
+    // grows out of the shank; the smaller end overlaps the gallery under the girdle.
+    const rounded=v=>Math.sign(v)*Math.pow(Math.abs(v),.55);
+    for(let i=0;i<=segments;i++){
+      const t=i/segments,center=curve.getPointAt(t),tangent=curve.getTangentAt(t);
+      const progress=cathedralShoulderProgress(Math.atan2(-sign*center.z,center.x),profile);
+      const width=cathedralShoulderSectionWidth(main,progress),depth=cathedralShoulderDepth(main,progress);
+      for(let j=0;j<=sides;j++){
+        const a=j/sides*Math.PI*2,offset=rounded(Math.sin(a))*depth/2;
+        p.setXYZ(i*(sides+1)+j,center.x+sign*tangent.z*offset,sign*rounded(Math.cos(a))*width/2,center.z-sign*tangent.x*offset);
+      }
+    }
+    const seated=items.filter(item=>item.cathedralFlush&&Math.sign(item.th)===sign);
+    if(seated.length){
+      // Retain the underside; the upper half is replaced by a skin with openings.
+      const indices=[];
+      for(let i=1;i<=segments;i++)for(let j=sides/2+1;j<=sides;j++){
+        const a=(sides+1)*(i-1)+j-1,b=(sides+1)*i+j-1,c=b+1,d=a+1;indices.push(a,b,d,b,c,d);
+      }
+      geometry.setIndex(indices);buildCathedralSeats(curve,main,sign,seated,material,segments);
+    }
+    const arch=new THREE.Mesh(geometry,material);arch.castShadow=true;ring.add(arch);
     p.needsUpdate=true;arch.geometry.computeVertexNormals();arch.name='cathedral-shoulder';
+  }
+}
+// Cut real openings into the upper shoulder skin and line each recessed seat.
+function buildCathedralSeats(curve,main,sign,items,material,segments){
+  const length=curve.getLength(),profile=cathedralShoulderProfile(),sections=[];
+  for(let i=0;i<=segments;i++){
+    const center=curve.getPointAt(i/segments),tangent=curve.getTangentAt(i/segments);
+    const progress=cathedralShoulderProgress(Math.atan2(-sign*center.z,center.x),profile);
+    sections.push({center,normal:new THREE.Vector3(sign*tangent.z,0,-sign*tangent.x),width:cathedralShoulderSectionWidth(main,progress),depth:cathedralShoulderDepth(main,progress)});
+  }
+  function surfaceAt(s,y){
+    const f=THREE.MathUtils.clamp(s/length,0,1)*segments,i=Math.min(segments-1,Math.floor(f)),t=f-i,a=sections[i],b=sections[i+1];
+    const width=a.width+(b.width-a.width)*t,depth=a.depth+(b.depth-a.depth)*t;
+    const offset=depth/2*Math.pow(Math.max(0,1-Math.pow(Math.min(1,Math.abs(2*y/width)),2/.55)),.55/2);
+    const point=a.center.clone().lerp(b.center,t).addScaledVector(a.normal.clone().lerp(b.normal,t).normalize(),offset);
+    point.y=THREE.MathUtils.clamp(y,-width/2,width/2);return point;
+  }
+  const shape=new THREE.Shape();
+  sections.forEach((section,i)=>{const s=i/segments*length,y=-section.width/2;i?shape.lineTo(s,y):shape.moveTo(s,y)});
+  for(let i=segments;i>=0;i--)shape.lineTo(i/segments*length,sections[i].width/2);
+  shape.closePath();
+  const seats=items.map(item=>{
+    let lo=0,hi=1;
+    for(let i=0;i<24;i++){const u=(lo+hi)/2,p=curve.getPointAt(u),a=Math.abs(Math.atan2(p.z,p.x));if(a>Math.abs(item.th))lo=u;else hi=u}
+    const s=(lo+hi)/2*length,r=item.d*.36+.025,path=new THREE.Path();
+    for(let i=0;i<32;i++){const a=-i/32*Math.PI*2,x=s+r*Math.cos(a),y=r*Math.sin(a);i?path.lineTo(x,y):path.moveTo(x,y)}
+    path.closePath();shape.holes.push(path);return {item,s,r};
+  });
+  const flat=new THREE.ShapeGeometry(shape),p=flat.attributes.position,index=flat.index,vertices=[],normals=[];
+  function vertex(q){
+    const point=surfaceAt(q[0],q[1]),ds=surfaceAt(q[0]+.001,q[1]).sub(surfaceAt(q[0]-.001,q[1]));
+    const dy=surfaceAt(q[0],q[1]+.001).sub(surfaceAt(q[0],q[1]-.001)),normal=ds.cross(dy).normalize().multiplyScalar(-sign);
+    vertices.push(point.x,point.y,point.z);normals.push(normal.x,normal.y,normal.z);
+  }
+  function split(a,b,c,depth=0){
+    const ab=Math.hypot(a[0]-b[0],a[1]-b[1]),bc=Math.hypot(b[0]-c[0],b[1]-c[1]),ca=Math.hypot(c[0]-a[0],c[1]-a[1]);
+    if(Math.max(ab,bc,ca)>.45&&depth<14){
+      if(ab>=bc&&ab>=ca){const m=[(a[0]+b[0])/2,(a[1]+b[1])/2];split(a,m,c,depth+1);split(m,b,c,depth+1)}
+      else if(bc>=ca){const m=[(b[0]+c[0])/2,(b[1]+c[1])/2];split(a,b,m,depth+1);split(a,m,c,depth+1)}
+      else{const m=[(c[0]+a[0])/2,(c[1]+a[1])/2];split(a,b,m,depth+1);split(m,b,c,depth+1)}
+    }else{vertex(a);vertex(sign===1?c:b);vertex(sign===1?b:c)}
+  }
+  const at=i=>[p.getX(i),p.getY(i)];
+  for(let i=0;i<index.count;i+=3)split(at(index.getX(i)),at(index.getX(i+1)),at(index.getX(i+2)));
+  flat.dispose();const skin=new THREE.BufferGeometry();skin.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));skin.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));
+  const top=new THREE.Mesh(skin,material);top.name='cathedral-shoulder-top';top.castShadow=true;ring.add(top);
+  for(const {item,s,r} of seats){
+    const frame=cathedralStoneFrame(item),n=new THREE.Vector3(...frame.normal),tangent=new THREE.Vector3(-n.z,0,n.x).multiplyScalar(sign),origin=new THREE.Vector3(...frame.origin),v=[];
+    const layer=(level,i)=>{
+      const a=i/32*Math.PI*2;
+      if(level===0)return surfaceAt(s+r*Math.cos(a),r*Math.sin(a));
+      const radius=item.d*(level===1?.505:.10),height=level===1?-.014*item.d:-.43*item.d-.06;
+      return origin.clone().addScaledVector(n,height).addScaledVector(tangent,radius*Math.cos(a)).add(new THREE.Vector3(0,radius*Math.sin(a),0));
+    };
+    const push=(...points)=>points.forEach(p=>v.push(p.x,p.y,p.z));
+    for(let j=0;j<2;j++)for(let i=0;i<32;i++){const a=layer(j,i),b=layer(j,i+1),c=layer(j+1,i+1),d=layer(j+1,i);push(a,b,d,b,c,d)}
+    const floor=origin.clone().addScaledVector(n,-.43*item.d-.06);
+    for(let i=0;i<32;i++)push(floor,layer(2,i),layer(2,i+1));
+    const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(v,3));geometry.computeVertexNormals();
+    const seat=new THREE.Mesh(geometry,material);seat.name='cathedral-stone-seat';seat.castShadow=true;ring.add(seat);
   }
 }
 function addTube(group,points,r,material){const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));const mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,24,r,8,false),material);mesh.castShadow=true;group.add(mesh);return mesh}
@@ -779,7 +917,7 @@ function addStone(item,bez){
     for(const points of plan.cornerCaps){const cap=addTube(sg,points,plan.prongRadius,bez);cap.name='princess-v-cap'}
     if(raisedSetting(em)&&(st.shoulder!=='cathedral'||slot!==2)){
       // A compact mounting neck joins the complete basket to the band beneath the culet.
-      const anchor=st.shoulder==='cathedral'?cathedralShoulderRadius(th):outerBandRadius(0),bottom=anchor-t-.10,top=plan.lowerY,depth=top-bottom;
+      const anchor=st.shoulder==='cathedral'?cathedralShoulderSupportRadius(th):outerBandRadius(0),bottom=anchor-t-.10,top=plan.lowerY,depth=top-bottom;
       const neck=new THREE.Mesh(new THREE.CylinderGeometry(plan.lowerRadius*.92,Math.min(st.w*.32/sg.scale.x,Math.max(.22,r*.28)),Math.max(.08,depth),32),bez);
       neck.position.y=(top+bottom)/2;neck.name='head-mounting-neck';neck.castShadow=true;sg.add(neck);
     }
@@ -789,6 +927,9 @@ function addStone(item,bez){
       const a=Math.PI/4+k*Math.PI/2,rr=em==='pave'?r*.77:r*.80,bead=new THREE.Mesh(new THREE.SphereGeometry(em==='pave'?.075:.095,12,8),bez);
       bead.position.set(rr*Math.cos(a),outerBandRadius(-rr*Math.cos(a))-t+.012,rr*Math.sin(a));sg.add(bead);
     }
+  }
+  if(item.cathedralFlush){
+    const {origin,normal}=cathedralStoneFrame(item);sg.position.set(...origin);sg.rotation.set(0,Math.atan2(-normal[2],normal[0]),-Math.PI/2);ring.add(sg);return;
   }
   const og=new THREE.Group();og.rotation.y=th;og.add(sg);ring.add(og);
 }
@@ -800,11 +941,12 @@ function clearRing(){
 let sel=2,previewScale=1;
 function setSlot(i,v){if(i===2)st.stone=v;else st.sc[i<2?i:i-1]=v}
 function render(){
+  rebuildPending=false;
   if(st.ringType==='engagement')st.engagementStyle=['solitaire','three','five'][+st.side];
   const sizes=stoneSizes();st.mainStoneSize=sizes.main;st.sideStoneSize=sizes.side;
   const minimumHeight=raisedSetting()?Math.ceil((.43*sizes.main+.15)*10)/10:.4;
   st.fh=Math.max(minimumHeight,Math.min(raisedSetting()?5:1.6,st.fh));
-  clearRing();const items=settingPlan(),holes=items.filter(item=>!raisedSetting(item.em)).map(holeFor),bez=metal(st.mat,'polish');
+  clearRing();const items=settingPlan(),holes=items.filter(item=>!raisedSetting(item.em)&&!item.cathedralFlush).map(holeFor),bez=metal(st.mat,'polish');
   buildBand(holes,metal(st.mat,st.surf),bez);taperShoulders();items.forEach(item=>addStone(item,bez));buildCathedralShoulders(items,bez);
   if(st.stones&&st.emb==='kanal'){
     const d=channelStoneWidth(),half=d/2+.10,start=Math.PI/2-channelEnd,length=channelEnd*2;
@@ -817,6 +959,10 @@ function render(){
   ctl.minDistance=25*scale;ctl.maxDistance=72*scale;
   const bounds=new THREE.Box3().setFromObject(ring);
   floor.position.y=bounds.min.y-.10;contact.position.y=floor.position.y+.005;
+  renderer.shadowMap.needsUpdate=true;invalidatePreview();updateControls();
+}
+function updateControls(){
+  const sizes=stoneSizes(),minimumHeight=raisedSetting()?Math.ceil((.43*sizes.main+.15)*10)/10:.4;
   $('#wv').textContent=st.w.toString().replace('.',',')+' mm';
   $('#tv').textContent=st.thickness.toString().replace('.',',')+' mm';
   $('#thickness').value=st.thickness;
@@ -828,6 +974,9 @@ function render(){
   $('#shoulder-options').hidden=!raisedSetting();
   st.cathedralWidth=cathedralShoulderWidth();
   $('#cathedral-width-options').hidden=st.shoulder!=='cathedral';
+  $('#cathedral-side-seat-options').hidden=+st.side===0;
+  $('#cathedral-seat-hint').hidden=st.cathedralStoneSeat!=='flush';
+  $('#cathedral-width').min=cathedralFlushSides()?1:.4;
   $('#cathedral-width').max=Math.min(3,st.w);$('#cathedral-width').value=st.cathedralWidth;$('#cathedral-width-value').textContent=st.cathedralWidth.toFixed(1).replace('.',',')+' mm';
   $('#shoulder-width-options').hidden=st.shoulder!=='tapered';
   $('#shoulder-width').value=st.shoulderWidth;$('#shoulder-width-value').textContent=st.shoulderWidth+' % ('+(st.w*st.shoulderWidth/100).toFixed(2).replace('.',',')+' mm)';
@@ -837,11 +986,11 @@ function render(){
   $('#stones-enabled').checked=st.stones;$('#stone-options').hidden=!st.stones;$('#side-options').hidden=st.emb==='pave';
   $('#main-size-options').hidden=st.emb==='pave';$('#side-size-options').hidden=!(st.emb==='pave'||+st.side>0);
   $('#side-size-label').textContent=st.emb==='pave'?'Pavé-Steingröße':'Seitensteingröße';
-  for(const [id,key,max] of [['main-stone','mainStoneSize',sizes.limit],['side-stone','sideStoneSize',Math.min(3,sizes.limit)]]){$('#'+id+'-size').max=max;$('#'+id+'-size').value=st[key];$('#'+id+'-value').textContent=st[key].toString().replace('.',',')+' mm'}
+  for(const [id,key,max] of [['main-stone','mainStoneSize',sizes.limit],['side-stone','sideStoneSize',Math.min(3,sizes.sideLimit??sizes.limit)]]){$('#'+id+'-size').max=max;$('#'+id+'-size').value=st[key];$('#'+id+'-value').textContent=st[key].toString().replace('.',',')+' mm'}
   const square=stoneShape({em:st.emb,slot:2})==='princess';
   const mainCarats='ca. '+formatCarats(estimateCarats(sizes.main,st.stone,square)*(raisedSetting()&&st.emb!=='karree'&&st.cut==='oval'?1.35:1));
   const sideTypes=st.emb==='pave'?[st.stone]:+st.side===2?st.sc:[st.sc[1],st.sc[2]];
-  const sideCarats=caratRange(sizes.side,sideTypes,st.emb==='karree');
+  const sideCarats=caratRange(sizes.side,sideTypes,stoneShape({em:cathedralFlushSides()?'flush':st.emb,slot:1})==='princess');
   $('#main-stone-carats').textContent=mainCarats;$('#side-stone-carats').textContent=sideCarats;
   $('#main-stone-size').setAttribute('aria-valuetext',$('#main-stone-value').textContent+'; geschätzt '+mainCarats);
   $('#side-stone-size').setAttribute('aria-valuetext',$('#side-stone-value').textContent+'; geschätzt '+sideCarats);
@@ -852,7 +1001,7 @@ function render(){
   $('#engraving').value=st.engraving;$('#engraving-count').textContent=st.engraving.length+' / 30';
   const nn=st.emb==='pave'?0:+st.side;if(Math.abs(sel-2)>nn)sel=2;
   const AA=[st.sc[0],st.sc[1],st.stone,st.sc[2],st.sc[3]];$('#slots').innerHTML='';
-  for(let i=2-nn;i<=2+nn;i++){const b=document.createElement('button'),cc=ST[AA[i]];b.className='sw';b.title=i===2?'Hauptstein':'Seitenstein';b.setAttribute('aria-label',b.title+' '+cc[0]);b.style.background=`radial-gradient(circle at 35% 30%,${cc[1]},${cc[2]} 55%,${cc[3]})`;b.setAttribute('aria-pressed',String(i===sel));b.onclick=()=>{sel=i;render()};$('#slots').appendChild(b)}
+  for(let i=2-nn;i<=2+nn;i++){const b=document.createElement('button'),cc=ST[AA[i]];b.className='sw';b.title=i===2?'Hauptstein':'Seitenstein';b.setAttribute('aria-label',b.title+' '+cc[0]);b.style.background=`radial-gradient(circle at 35% 30%,${cc[1]},${cc[2]} 55%,${cc[3]})`;b.setAttribute('aria-pressed',String(i===sel));b.onclick=()=>{sel=i;updateControls()};$('#slots').appendChild(b)}
   document.querySelectorAll('#c-stone [data-v]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===AA[sel])));
   const info=STONE_INFO[AA[sel]];$('#stone-detail').textContent=ST[AA[sel]][0]+' · Mohshärte '+info[0]+' · '+info[1];
   $('#w').value=st.w;$('#dm').value=st.dome;$('#gfh').hidden=!(st.stones&&(st.emb==='karree'||raisedSetting()));$('#fh').max=raisedSetting()?5:1.6;$('#fh').min=minimumHeight;$('#fh').value=st.fh;$('#fv').textContent=st.fh.toFixed(1).replace('.',',')+' mm';$('#dv').textContent=st.dome+' %';$('#dm').setAttribute('aria-valuetext',st.dome+' Prozent'+(st.dome>100?', stark gerundet':''));
@@ -861,17 +1010,17 @@ function render(){
 function updateRotationButton(){const b=$('#rotate');if(b)b.setAttribute('aria-pressed',String(ctl.autoRotate))}
 function setView(view){
   ctl.autoRotate=false;ring.rotation.y=-Math.PI/4;ctl.target.set(0,0,0);
-  const positions={setting:[30,23,30],profile:[0,60,0],inside:[22,43,22]};cam.up.set(...(view==='profile'?[Math.SQRT1_2,0,Math.SQRT1_2]:[0,1,0]));cam.position.set(...positions[view]).multiplyScalar(previewScale);cam.lookAt(ctl.target);ctl.update();updateRotationButton();
+  const positions={setting:[30,23,30],profile:[0,60,0],inside:[22,43,22]};cam.up.set(...(view==='profile'?[Math.SQRT1_2,0,Math.SQRT1_2]:[0,1,0]));cam.position.set(...positions[view]).multiplyScalar(previewScale);cam.lookAt(ctl.target);ctl.update();updateRotationButton();renderer.shadowMap.needsUpdate=true;invalidatePreview();
   document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===view)));
 }
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
-$('#rotate').onclick=()=>{ctl.autoRotate=!ctl.autoRotate;updateRotationButton()};
+$('#rotate').onclick=()=>{ctl.autoRotate=!ctl.autoRotate;updateRotationButton();invalidatePreview()};
 const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();let pointerDown=null;
 renderer.domElement.addEventListener('pointerdown',e=>{pointerDown=[e.clientX,e.clientY]});
 renderer.domElement.addEventListener('pointerup',e=>{
   if(!pointerDown||Math.hypot(e.clientX-pointerDown[0],e.clientY-pointerDown[1])>5)return;
   const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,cam);
-  const hit=raycaster.intersectObjects(pickTargets)[0];if(hit){sel=hit.object.userData.slot;render()}
+  const hit=raycaster.intersectObjects(pickTargets)[0];if(hit){sel=hit.object.userData.slot;updateControls()}
 });
 
 function build(id,key,obj,kind){
@@ -892,6 +1041,8 @@ function build(id,key,obj,kind){
 build('#c-ring-type','ringType',RING_TYPE);
 document.querySelectorAll('#c-ring-type button').forEach(b=>b.onclick=()=>{selectRingType(b.dataset.v);sel=2;render()});
 build('#c-shoulder','shoulder',SHOULDER);
+build('#c-cathedral-profile','cathedralProfile',CATHEDRAL_PROFILE);
+build('#c-cathedral-seat','cathedralStoneSeat',CATHEDRAL_SEAT);
 build('#c-cut','cut',CUT);build('#c-prongs','prongs',{4:'4 Krappen',6:'6 Krappen'});
 document.querySelectorAll('#c-prongs button').forEach(b=>b.onclick=()=>{st.prongs=+b.dataset.v;render()});
 build('#c-engagement-style','engagementStyle',ENGAGEMENT_STYLE);
@@ -902,10 +1053,10 @@ document.querySelectorAll('#c-pattern button').forEach(b=>{b.classList.add('patt
 build('#c-stripe','stripe',{none:['Kein Streifen'],...M},'sw');
 document.querySelector('#c-stripe [data-v=none]').classList.add('none');
 $('#stones-enabled').onchange=e=>{st.stones=e.target.checked;render()};
-for(const [id,key] of [['cathedral-width','cathedralWidth'],['shoulder-width','shoulderWidth'],['main-stone-size','mainStoneSize'],['side-stone-size','sideStoneSize'],['size','size'],['pattern-depth','patternDepth'],['pattern-spacing','patternSpacing']]){$('#'+id).oninput=e=>{st[key]=+e.target.value;render()}}
-$('#engraving').oninput=e=>{st.engraving=e.target.value.slice(0,30);render()};
-$('#thickness').oninput=e=>{st.thickness=+e.target.value;render()};
-$('#w').oninput=e=>{st.w=+e.target.value;render()};$('#dm').oninput=e=>{st.dome=+e.target.value;render()};$('#fh').oninput=e=>{st.fh=+e.target.value;render()};
+for(const [id,key] of [['cathedral-width','cathedralWidth'],['shoulder-width','shoulderWidth'],['main-stone-size','mainStoneSize'],['side-stone-size','sideStoneSize'],['size','size'],['pattern-depth','patternDepth'],['pattern-spacing','patternSpacing']]){$('#'+id).oninput=e=>{st[key]=+e.target.value;scheduleRender()}}
+$('#engraving').oninput=e=>{st.engraving=e.target.value.slice(0,30);scheduleRender()};
+$('#thickness').oninput=e=>{st.thickness=+e.target.value;scheduleRender()};
+$('#w').oninput=e=>{st.w=+e.target.value;scheduleRender()};$('#dm').oninput=e=>{st.dome=+e.target.value;scheduleRender()};$('#fh').oninput=e=>{st.fh=+e.target.value;scheduleRender()};
 
 const SAVE_KEY='ring-configurator-v1';
 function downloadFile(name,content,type){
@@ -923,7 +1074,7 @@ function exportDescription(){
     `Innengravur: ${st.engraving.trim()||'Keine'}`,`Steine: ${st.stones?'Ja':'Keine'}`);
   if(st.stones){
     lines.push(`Fassung: ${EMB[st.emb]}`, 'Karat: Schätzung pro Stein; angenommene Tiefe 62 % bei Rundschliff, 70 % bei Karree/Princess.');
-    if(raisedSetting()&&st.shoulder==='cathedral')lines.push(`Breite der Kathedral-Schultern: ${cathedralShoulderWidth().toFixed(2)} mm`);
+    if(raisedSetting()&&st.shoulder==='cathedral'){lines.push(`Breite der Kathedral-Schultern: ${cathedralShoulderWidth().toFixed(2)} mm`,`Verlauf der Kathedral-Schultern: ${CATHEDRAL_PROFILE[st.cathedralProfile??'tapered']}`);if(+st.side>0)lines.push(`Seitensteine in den Schultern: ${CATHEDRAL_SEAT[st.cathedralStoneSeat??'raised']}`)}
     if(raisedSetting()){lines.push(`Ringschulter: ${SHOULDER[st.shoulder]}`);if(st.shoulder==='tapered')lines.push(`Schulterbreite am Hauptstein: ${(st.w*st.shoulderWidth/100).toFixed(2)} mm (${st.shoulderWidth} % der Ringbreite)`)}
     if(raisedSetting()){lines.push(`Hauptsteinschliff: ${CUT[stoneShape({em:st.emb,slot:2})]}`);if(st.emb==='krappen')lines.push(`Krappen am Hauptstein: ${st.cut==='princess'?4:st.prongs}`);lines.push(`Fassungshöhe (Stein-Gürtel über dem Ringband): ${(stoneLevel({d:stoneSizes().main,em:st.emb})-outerPeak()).toFixed(2)} mm`)}
     if(raisedSetting()&&st.emb!=='karree'&&st.cut==='oval')lines.push(`Ovaler Hauptstein (kurze × lange Achse): ${stoneSizes().main.toFixed(2)} × ${(stoneSizes().main*1.35).toFixed(2)} mm`);
