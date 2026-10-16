@@ -181,7 +181,9 @@ summary:focus-visible,select:focus-visible{outline:3px solid var(--acc);outline-
 <div class="mx"><div class="grid" id="mx"></div></div>
 <h2>Beispielkombinationen</h2>
 <div class="pre" id="pre"></div>
-</div></details></section>
+</div></details>
+<div class="randomizer" style="margin-top:20px"><button class="chip" id="randomize" type="button" aria-describedby="randomize-hint"><span aria-hidden="true">⚄</span> Zufälligen Entwurf erstellen</button><small class="range-hint" id="randomize-hint">Neue Kombination entdecken · Ringgröße und Gravur bleiben erhalten.</small><p class="range-hint" id="randomize-status" role="status"></p></div>
+</section>
 <section class="inspiration site-settings">
 <details><summary>Website-Einstellungen<span>Darstellung der 3D-Vorschau</span></summary>
 <div class="inspiration-body quality-settings">
@@ -290,6 +292,23 @@ function selectRingType(type){
   if(!Object.prototype.hasOwnProperty.call(RING_TYPE,type))return;
   const defaults=type==='engagement'?{w:2.5,stones:true,emb:'krappen',mainStoneSize:6,sideStoneSize:2,fh:3,side:0,cut:'round',engagementStyle:'solitaire',prongs:4}:type==='women'?{w:3,stones:true,emb:'flush',mainStoneSize:1.5,sideStoneSize:1,side:0,fh:.8}:{w:6,stones:true,emb:'flush',mainStoneSize:2.9,sideStoneSize:2,side:0,fh:.8};
   st=normalizeConfig({...st,pattern:'none',stripe:'none',bandProfile:'rounded',dome:40,ringType:type,shoulder:'straight',...defaults});
+}
+function randomizeConfig(current,random=Math.random){
+  const pick=values=>values[Math.floor(random()*values.length)];
+  const ringType=pick(Object.keys(RING_TYPE)),raised=ringType==='engagement';
+  const mat=pick(Object.keys(M).filter(key=>key!==current.mat));
+  const stone=pick(Object.keys(ST)),side=pick([0,1,2]);
+  return normalizeConfig({...DEFAULT_CONFIG,size:current.size,engraving:current.engraving,profile:current.profile,
+    ringType,mat,surf:pick(Object.keys(SURF)),pattern:pick(['none','none',...Object.keys(PATTERN)]),
+    stripe:pick(['none','none','none',...Object.keys(M).filter(key=>key!==mat)]),
+    bandProfile:pick(Object.keys(BAND_PROFILE)),dome:pick([20,40,60,80]),
+    w:pick(raised?[2.5,3,3.5]:ringType==='women'?[2.5,3,3.5,4]:[5,6,7,8]),
+    thickness:pick([1.8,2,2.2,2.4]),stones:raised||random()<.75,
+    emb:pick(raised?['krappen','zarge','vollzarge']:Object.keys(EMB)),
+    mainStoneSize:pick(raised?[4,5,6]:[1.5,2,2.5]),sideStoneSize:pick([1,1.2,1.5]),
+    stone,sc:[stone,stone,stone,stone],side,engagementStyle:['solitaire','three','five'][side],
+    cut:pick(Object.keys(CUT)),prongs:pick([4,6]),fh:raised?3:.8
+  });
 }
 function configurationSnapshot(){return {version:1,configuration:{...st,sc:[...st.sc]}}}
 function parseConfigurationJSON(text){
@@ -1350,6 +1369,11 @@ for(const [id,key] of [['cathedral-width','cathedralWidth'],['cathedral-thicknes
 $('#engraving').oninput=e=>{st.engraving=e.target.value.slice(0,30);scheduleRender()};
 $('#thickness').oninput=e=>{st.thickness=+e.target.value;scheduleRender()};
 $('#w').oninput=e=>{st.w=+e.target.value;scheduleRender()};$('#dm').oninput=e=>{st.dome=+e.target.value;scheduleRender()};$('#fh').oninput=e=>{st.fh=+e.target.value;scheduleRender()};
+
+$('#randomize').onclick=()=>{
+  st=randomizeConfig(st);sel=2;render();
+  $('#randomize-status').textContent='Neuer Entwurf: '+$('#sum').textContent;
+};
 
 const SAVE_KEY='ring-configurator-v1';
 function downloadFile(name,content,type){
