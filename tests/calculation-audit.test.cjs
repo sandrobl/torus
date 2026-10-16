@@ -67,3 +67,13 @@ test('export counts, dimensions, and stone colors agree with the generated confi
   assert.equal(api.settingPlan().length,0);
   assert.ok(!/^Stein \d/m.test(api.exportDescription()));
 });
+
+test('cathedral text export includes all controls and labels shoulder pave separately',()=>{
+  reset({ringType:'engagement',shoulder:'cathedral',emb:'krappen',w:2.5,mainStoneSize:6,fh:3,side:1,cathedralThickness:1.4,cathedralCurvature:70,cathedralSideSpacing:.25,cathedralSideTilt:15,cathedralConnection:'split',cathedralPave:true,cathedralPaveSize:.8,cathedralPaveCount:5,cathedralPaveStone:'blue',cathedralBendAngle:100});
+  const text=api.exportDescription(),pave=api.settingPlan().filter(item=>item.cathedralPave);
+  assert.ok(text.includes('Schulterstärke: 1.40 mm'));assert.ok(text.includes('Bogenform: 70 %'));
+  assert.ok(text.includes('Zusätzlicher Seitenstein-Abstand: 0.25 mm'));assert.ok(text.includes('Seitenstein-Neigung: 15°'));
+  assert.ok(text.includes('Fassungsanschluss: Geteilter Anschluss'));assert.ok(text.includes('Schulter-Pavé:'));
+  assert.equal(text.split('\n').filter(line=>/^Stein \d+ \(Hauptstein\)/.test(line)).length,1);
+  assert.equal(text.split('\n').filter(line=>/^Stein \d+ \(Schulter-Pavé/.test(line)).length,pave.length);
+});

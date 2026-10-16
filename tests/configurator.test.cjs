@@ -300,10 +300,10 @@ test('cathedral roots blend into the shank and gallery joins retain a useful wid
   const points=m.run('cathedralShoulderPoints(settingPlan(),1)');
   assert.ok(Math.hypot(...[points[0][0],points[0][2]])<m.run('outerPeak()')-.3,'root must start inside the shank');
 });
-test('cathedral arches do not flatten at intermediate profile knots',()=>{
+test('cathedral arches keep rising beneath the side stones',()=>{
   const m=model({ringType:'engagement',emb:'krappen',shoulder:'cathedral',w:2.5,cathedralWidth:1.5,mainStoneSize:6,fh:3,side:1});
-  const p=m.run('cathedralShoulderProfile()');
-  for(const [a] of p.knots.slice(1,-1)){
+  for(const item of m.run('settingPlan().filter(item=>item.slot!==2)')){
+    const a=Math.abs(item.th);
     const slope=m.run(`(cathedralShoulderRadius(${a-.0001})-cathedralShoulderRadius(${a+.0001}))/.0002`);
     assert.ok(slope>.2,'intermediate join must keep rising rather than form a plateau');
   }
@@ -348,4 +348,50 @@ test('flush side-stone size limits stay on the slider and saved configuration st
   const m=model({ringType:'engagement',emb:'krappen',shoulder:'cathedral',cathedralStoneSeat:'flush',cathedralProfile:'tapered',w:2.5,cathedralWidth:1.5,mainStoneSize:6,sideStoneSize:2,side:1,thickness:1.9});
   const size=m.run('stoneSizes().side');
   assert.ok(Math.abs(size*10-Math.round(size*10))<1e-9,'a save/load must not silently round the fitted stone to a different size');
+});
+
+test('cathedral shoulders retain continuous curvature at side-stone supports',()=>{
+  for(const side of [1,2]){
+    const m=model({ringType:'engagement',emb:'krappen',shoulder:'cathedral',w:2.5,cathedralWidth:1.5,mainStoneSize:6,sideStoneSize:2,fh:3,side});
+    const a=m.run('settingPlan().find(item=>item.slot===3).th'),h=.0001;
+    const radius=x=>m.run(`cathedralShoulderRadius(${x})`);
+    const left=(radius(a)-2*radius(a-h)+radius(a-2*h))/(h*h);
+    const right=(radius(a+2*h)-2*radius(a+h)+radius(a))/(h*h);
+    assert.ok(Math.abs(left-right)<.05,'a side-stone support must not introduce a visible curvature seam');
+  }
+});
+test('cathedral width tapers smoothly through the middle of the shoulder',()=>{
+  const m=model({ringType:'engagement',emb:'krappen',shoulder:'cathedral',w:2.5,cathedralWidth:1.5,mainStoneSize:6});
+  const width=t=>m.run(`cathedralShoulderSectionWidth({d:6},${t})`),h=.0001;
+  const left=(width(.5)-2*width(.5-h)+width(.5-2*h))/(h*h);
+  const right=(width(.5+2*h)-2*width(.5+h)+width(.5))/(h*h);
+  assert.ok(Math.abs(left-right)<.05,'the taper must not have a curvature break halfway along the shoulder');
+  for(let i=1;i<=100;i++)assert.ok(width(i/100)<=width((i-1)/100)+1e-10);
+});
+test('cathedral bend angle adjusts the sweep while retaining the gallery join',()=>{
+  const m=model({ringType:'engagement',emb:'krappen',shoulder:'cathedral',w:2.5,mainStoneSize:6,fh:3,side:0,cathedralBendAngle:45});
+  const short=m.run('cathedralShoulderPoints(settingPlan(),1)'),radius=m.run('cathedralShoulderRadius(.6)');
+  assert.ok(Math.abs(Math.atan2(-short[0][2],short[0][0])*180/Math.PI-45)<1e-9);
+  m.st.cathedralBendAngle=85;
+  const long=m.run('cathedralShoulderPoints(settingPlan(),1)');
+  assert.ok(Math.abs(Math.atan2(-long[0][2],long[0][0])*180/Math.PI-85)<1e-9);
+  assert.deepEqual(long.at(-1),short.at(-1),'changing the sweep keeps the shoulder attached to the basket');
+  assert.notEqual(m.run('cathedralShoulderRadius(.6)'),radius);
+});
+test('cathedral bend angle saves, imports and normalizes with older configurations',()=>{
+  const run=configModel();
+  run("st=normalizeConfig({ringType:'engagement',shoulder:'cathedral',cathedralBendAngle:78})");
+  assert.equal(run('parseConfigurationJSON(JSON.stringify(configurationSnapshot())).cathedralBendAngle'),78);
+  assert.equal(run('normalizeConfig({}).cathedralBendAngle'),60);
+  assert.equal(run('normalizeConfig({cathedralBendAngle:-20}).cathedralBendAngle'),25);
+  assert.equal(run('normalizeConfig({cathedralBendAngle:250}).cathedralBendAngle'),100);
+});
+
+test('flush side-stone depth blends smoothly into the minimum seat depth',()=>{
+  const m=model({ringType:'engagement',emb:'krappen',shoulder:'cathedral',cathedralStoneSeat:'flush',cathedralProfile:'constant',cathedralWidth:1.5,w:2.5,thickness:1.9,mainStoneSize:6,sideStoneSize:2,side:1});
+  const depth=t=>m.run(`cathedralShoulderDepth({d:6},${t})`),minimum=depth(1);
+  let lo=0,hi=1;
+  for(let i=0;i<32;i++){const t=(lo+hi)/2;if(depth(t)>minimum+1e-10)lo=t;else hi=t}
+  const t=(lo+hi)/2,h=.0001,left=(depth(t)-depth(t-h))/h,right=(depth(Math.min(1,t+h))-depth(t))/h;
+  assert.ok(Math.abs(left-right)<.01,'the seat-depth limit must not introduce a crease in the shoulder');
 });

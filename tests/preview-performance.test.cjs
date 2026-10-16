@@ -35,6 +35,13 @@ test('rapid slider inputs rebuild once per frame with the latest value',()=>{
   assert.equal(p.rebuilds,0);assert.equal(p.queued,1);
   p.tick();assert.equal(p.rebuilds,1);assert.equal(p.lastWidth,5);
 });
+test('the cathedral bend slider schedules the latest angle for the next preview frame',()=>{
+  const p=preview(),start=html.indexOf("for(const [id,key] of [['cathedral-width'");
+  vm.runInContext(html.slice(start,html.indexOf('const SAVE_KEY=',start)),p.ctx);
+  for(const angle of [60,75,85])p.elements.get('#cathedral-angle').oninput({target:{value:String(angle)}});
+  assert.equal(p.st.cathedralBendAngle,85);assert.equal(p.rebuilds,0);assert.equal(p.queued,1);
+  p.tick();assert.equal(p.rebuilds,1);
+});
 test('camera damping and automatic rotation keep updating until they stop',()=>{
   const p=preview();p.ctl.moving=3;
   assert.equal(typeof p.controls.change,'function','camera changes must wake the preview');

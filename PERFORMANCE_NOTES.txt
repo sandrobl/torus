@@ -1,0 +1,100 @@
+Ring preview optimization — 2026-10-16
+
+Implemented in order of expected benefit without reducing visual detail:
+
+1. Reuse the current ring for appearance edits.
+   Metal, finish, stone colors, engraving and existing inlay colors update only
+   affected materials. Compatible materials keep their resource identities;
+   gemstone color edits update optical uniforms and retain the shared studio.
+   Geometry, camera scale, bounds and shadow maps stay intact. Dimension,
+   setting, pattern and inlay-presence changes still rebuild the geometry.
+
+2. Calculate each exact band-surface coordinate once per build.
+   Smooth surfaces use indexed triangles to share vertex attributes. UV seam
+   endpoints remain separate. Facets and tapered shoulders keep independent
+   face normals. Triangle count, subdivision density, gemstone shaders,
+   optical bounce count, antialiasing and preview resolution are unchanged.
+
+MEASURED RESULTS
+CPU construction of the outer band surface, Node 24.20.0 / Three.js r147.
+One warmup followed by the median of five samples. Baseline: commit 076dc5c.
+Timings vary with hardware and load; these are not browser frame-rate or GPU
+measurements. Buffer sizes include all attributes plus the index buffer.
+
+Configuration   Before ms   After ms   Before bytes   After bytes
+Plain                8.88       5.52      1,380,864       319,520
+Waves              887.60     255.57     38,245,248    11,174,064
+Facets             489.58     248.60     38,245,248    38,245,248
+Pave                16.64       9.56      2,659,584       622,864
+Channel             30.48       9.94      1,862,400       433,072
+
+Waves build about 3.5 times faster and use 71% less geometry-buffer memory.
+The other indexed outer surfaces use approximately 77% less buffer memory.
+Appearance edits do not rebuild these surfaces at all.
+
+VERIFICATION
+- 52 existing tests pass, including 5,832 numerical boundary combinations.
+- 12 outer/bore mesh comparisons against pre-change SHA-256 fixtures preserve
+  the expanded positions, normals, UVs, triangle order and winding byte for byte.
+  Covers plain, waves, facets, pave, channel and tapered configurations.
+- Actual Three.js material checks cover mesh reuse, finishes, polished bore,
+  engraving, inlays, shared studio texture, independent stone colors, opaque
+  to refractive transitions, optical camera uniforms and dimensional rebuilds.
+- Existing actual-mesh checks: 108 cathedral configurations and 72 flush-seat
+  configurations pass finite-normal, bore-clearance and open-seat assertions.
+- Browser visual smoke check unavailable: browser security blocked file URLs.
+
+REPRODUCE
+Use a local CommonJS build of the same pinned Three.js r147 dependency.
+No runtime or package dependency was added to the configurator.
+
+node --test tests/*.test.cjs
+node tests/check-band-performance.cjs /path/to/three-r147.cjs
+node tests/check-material-performance.cjs /path/to/three-r147.cjs
+node tests/check-cathedral-mesh.cjs /path/to/three-r147.cjs
+node tests/benchmark-band.cjs /path/to/three-r147.cjs [path/to/baseline.html]
+
+For a baseline HTML file:
+git show 076dc5c:index.html > /tmp/ring-before-optimization.html
+
+FUTURE CANDIDATES
+Lazy generation of unused surface textures could improve startup time.
+Changes to gemstone ray tracing, mesh density, shadow resolution or pixel
+ratio need separate visual and GPU profiling because they can affect quality.
+
+SUBSEQUENT SHOULDER UPDATE — 2026-10-16
+Cathedral shoulders now use one smooth arch, a continuous width taper and a
+smooth thickness transition for flush side stones. The sweep evaluates the
+arch directly, and matching seam vertices share their shading normals.
+The Biegewinkel control adjusts the shoulder's angular extent around the ring
+center: smaller gives a short, steep arch; larger gives a longer sweep.
+Default 60 degrees; upper limit 100 degrees. The lower limit adapts to the
+selected setting and side stones. The angle is saved/imported and exported.
+Current verification: 58 unit tests, 648 raised cathedral configurations and
+216 flush-seat configurations, plus the band and appearance checks above.
+
+COMPLETE CATHEDRAL CONTROLS — 2026-10-16
+Added independent shoulder thickness and arch curvature; side-stone spacing
+and tilt; gallery, basket-base and split connections; and shoulder pave with
+its own size, requested count and gemstone color. All choices round-trip in
+saved JSON and appear in the text export. The UI reports the actual fitted
+pave count when the requested row does not fit.
+
+Flush seats retain enough metal beneath the stone; the setting height adapts
+to preserve the finger opening and keep the seat floors clear of the band.
+Split arms scale with the main stone. Camera framing fits the complete ring,
+including tall fitted settings, in every preset and on viewport resize.
+
+Final verification: 68 unit tests, the existing 648 raised and 216 flush-seat
+mesh cases, plus 648 complete rings spanning three stone sizes, four settings,
+three connection styles, three cuts, three shoulder thicknesses and pave on
+or off. These contain 2,738 additional shoulder-pave seats. Assertions cover
+finite geometry, finger clearance, main-stone clearance, separated gemstone
+envelopes, open flush seats, split-arm counts and independent pave color edits
+without geometry rebuilds. A camera regression projects the entire bounding
+box in all three presets and a narrow viewport. Browser visual smoke testing
+remains unavailable because browser security blocked file URLs.
+
+Additional commands:
+node tests/check-cathedral-options.cjs /path/to/three-r147.cjs
+node tests/check-preview-framing.cjs /path/to/three-r147.cjs
